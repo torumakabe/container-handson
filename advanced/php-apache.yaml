@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    run: php-apache
+  name: php-apache
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: php-apache
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        run: php-apache
+    spec:
+      containers:
+      - image: k8s.gcr.io/hpa-example
+        imagePullPolicy: Always
+        name: php-apache
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 200m
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: 2018-11-20T05:51:54Z
+    lastUpdateTime: 2018-11-20T05:51:54Z
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: 2018-11-20T05:50:35Z
+    lastUpdateTime: 2018-11-20T05:51:54Z
+    message: ReplicaSet "php-apache-55b8c5f78f" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: php-apache
+  namespace: default
+spec:
+  clusterIP: 10.0.3.196
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    run: php-apache
+  sessionAffinity: None
+  type: ClusterIP
