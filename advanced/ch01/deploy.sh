@@ -15,4 +15,4 @@ az aks create \
     --service-principal $AZ_SP_CLIENT_ID \
     --client-secret $AZ_SP_CLIENT_SECRET
 
-az aks get-credentials -g $RG -n $AKS_CLUSTER_NAME --admin
+az aks get-credentials -g $RG -n $AKS_CLUSTER_NAME --admin --overwrite-existing
