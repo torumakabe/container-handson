@@ -1,48 +1,50 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: azure-vote-back
+  name: YOUR_PREFIX-vote-back
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: azure-vote-back
+      app: YOUR_PREFIX-vote-back
   template:
     metadata:
       labels:
-        app: azure-vote-back
+        app: YOUR_PREFIX-vote-back
     spec:
       containers:
-      - name: azure-vote-back
+      - name: YOUR_PREFIX-vote-back
         image: redis
         ports:
         - containerPort: 6379
           name: redis
         resources:
           requests:
-            cpu: 100m
+            cpu: 50m
+            memory: 100Mi
           limits:
-            cpu: 100m
+            cpu: 50m
+            memory: 100Mi
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: azure-vote-back
+  name: YOUR_PREFIX-vote-back
 spec:
   ports:
   - port: 6379
   selector:
-    app: azure-vote-back
+    app: YOUR_PREFIX-vote-back
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: azure-vote-front
+  name: YOUR_PREFIX-vote-front
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: azure-vote-front
+      app: YOUR_PREFIX-vote-front
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -51,29 +53,31 @@ spec:
   template:
     metadata:
       labels:
-        app: azure-vote-front
+        app: YOUR_PREFIX-vote-front
     spec:
       containers:
-      - name: azure-vote-front
+      - name: YOUR_PREFIX-vote-front
         image: torumakabe/vote:0.0.1
         ports:
         - containerPort: 80
         resources:
           requests:
-            cpu: 100m
+            cpu: 50m
+            memory: 100Mi
           limits:
-            cpu: 100m
+            cpu: 50m
+            memory: 100Mi
         env:
         - name: REDIS
-          value: "azure-vote-back"
+          value: "YOUR_PREFIX-vote-back"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: azure-vote-front
+  name: YOUR_PREFIX-vote-front
 spec:
   type: LoadBalancer
   ports:
   - port: 80
   selector:
-    app: azure-vote-front
+    app: YOUR_PREFIX-vote-front
