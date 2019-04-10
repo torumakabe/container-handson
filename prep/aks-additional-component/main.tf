@@ -7,6 +7,11 @@ data "azurerm_kubernetes_cluster" "aks" {
   resource_group_name = "${var.aks_cluster_rg}"
 }
 
+data "azurerm_log_analytics_workspace" "aks" {
+  name                = "${var.la_workspace_name_for_aks}"
+  resource_group_name = "${var.la_workspace_rg_for_aks}"
+}
+
 provider "kubernetes" {
   version                = "~>1.5"
   load_config_file       = false
@@ -207,5 +212,56 @@ resource "kubernetes_cluster_role_binding" "tiller" {
     kind      = "ServiceAccount"
     name      = "tiller"
     namespace = "kube-system"
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "aks" {
+  name                       = "diag_aks"
+  target_resource_id         = "${data.azurerm_kubernetes_cluster.aks.id}"
+  log_analytics_workspace_id = "${data.azurerm_log_analytics_workspace.aks.id}"
+
+  log {
+    category = "kube-apiserver"
+    enabled  = true
+
+    retention_policy {
+      enabled = false
+    }
+  }
+
+  log {
+    category = "kube-controller-manager"
+    enabled  = true
+
+    retention_policy {
+      enabled = false
+    }
+  }
+
+  log {
+    category = "kube-scheduler"
+    enabled  = true
+
+    retention_policy {
+      enabled = false
+    }
+  }
+
+  log {
+    category = "kube-audit"
+    enabled  = true
+
+    retention_policy {
+      enabled = false
+    }
+  }
+
+  log {
+    category = "cluster-autoscaler"
+    enabled  = true
+
+    retention_policy {
+      enabled = false
+    }
   }
 }
