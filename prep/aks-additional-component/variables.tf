@@ -13,3 +13,7 @@ variable "la_workspace_name_for_aks" {
 variable "la_workspace_rg_for_aks" {
   default = "your-log-analytics-workspace-resource-group-name"
 }
+
+variable "istio_version" {
+  default = "1.0.4"
+}

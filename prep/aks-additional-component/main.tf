@@ -276,3 +276,24 @@ resource "kubernetes_namespace" "istio-system" {
     name = "istio-system"
   }
 }
+
+resource "null_resource" "istio" {
+  depends_on = ["kubernetes_namespace.istio-system", "kubernetes_service_account.tiller", "kubernetes_cluster_role_binding.tiller"]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      helm init --upgrade --service-account tiller --wait
+      mkdir -p .download
+      curl -sL "https://github.com/istio/istio/releases/download/$${ISTIO_VERSION}/istio-$${ISTIO_VERSION}-linux.tar.gz" | tar xz -C ./.download/
+      helm install ./.download/istio-$${ISTIO_VERSION}/install/kubernetes/helm/istio --name istio --namespace istio-system \
+        --set global.controlPlaneSecurityEnabled=true \
+        --set grafana.enabled=true \
+        --set tracing.enabled=true \
+        --set kiali.enabled=true
+    EOT
+
+    environment {
+      ISTIO_VERSION = "${var.istio_version}"
+    }
+  }
+}
