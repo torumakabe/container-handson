@@ -2,6 +2,18 @@ provider "azurerm" {
   version = "~>1.24"
 }
 
+provider "kubernetes" {
+  version = "~>1.5"
+
+  /*
+  load_config_file       = false
+  host                   = "${data.azurerm_kubernetes_cluster.aks.kube_config.0.host}"
+  client_certificate     = "${base64decode(data.azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)}"
+  client_key             = "${base64decode(data.azurerm_kubernetes_cluster.aks.kube_config.0.client_key)}"
+  cluster_ca_certificate = "${base64decode(data.azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)}"
+*/
+}
+
 data "azurerm_kubernetes_cluster" "aks" {
   name                = "${var.aks_cluster_name}"
   resource_group_name = "${var.aks_cluster_rg}"
@@ -10,15 +22,6 @@ data "azurerm_kubernetes_cluster" "aks" {
 data "azurerm_log_analytics_workspace" "aks" {
   name                = "${var.la_workspace_name_for_aks}"
   resource_group_name = "${var.la_workspace_rg_for_aks}"
-}
-
-provider "kubernetes" {
-  version                = "~>1.5"
-  load_config_file       = false
-  host                   = "${data.azurerm_kubernetes_cluster.aks.kube_config.0.host}"
-  client_certificate     = "${base64decode(data.azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)}"
-  client_key             = "${base64decode(data.azurerm_kubernetes_cluster.aks.kube_config.0.client_key)}"
-  cluster_ca_certificate = "${base64decode(data.azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)}"
 }
 
 resource "kubernetes_cluster_role" "kured" {
@@ -195,11 +198,13 @@ resource "kubernetes_service_account" "tiller" {
     name      = "tiller"
     namespace = "kube-system"
   }
+
+  automount_service_account_token = true
 }
 
 resource "kubernetes_cluster_role_binding" "tiller" {
   metadata {
-    name = "tiller"
+    name = "${kubernetes_service_account.tiller.metadata.0.name}"
   }
 
   role_ref {
@@ -210,7 +215,7 @@ resource "kubernetes_cluster_role_binding" "tiller" {
 
   subject {
     kind      = "ServiceAccount"
-    name      = "tiller"
+    name      = "${kubernetes_service_account.tiller.metadata.0.name}"
     namespace = "kube-system"
   }
 }
@@ -263,5 +268,11 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
     retention_policy {
       enabled = false
     }
+  }
+}
+
+resource "kubernetes_namespace" "istio-system" {
+  metadata {
+    name = "istio-system"
   }
 }
