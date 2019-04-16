@@ -15,5 +15,21 @@ variable "la_workspace_rg_for_aks" {
 }
 
 variable "istio_version" {
-  default = "1.0.4"
+  default = "1.1.2"
+}
+
+variable "kiali_username" {
+  default = "admin"
+}
+
+variable "kiali_pass" {
+  default = "1f2d1e2e67df"
+}
+
+variable "grafana_username" {
+  default = "admin"
+}
+
+variable "grafana_pass" {
+  default = "1f2d1e2e67df"
 }

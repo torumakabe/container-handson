@@ -2,6 +2,10 @@ provider "azurerm" {
   version = "~>1.24"
 }
 
+/*
+ToDo: Replace kubeconfig auth. to Terraform data source & add helm providerß
+When this helm issue has been resolved https://github.com/terraform-providers/terraform-provider-helm/issues/148
+*/
 provider "kubernetes" {
   version = "~>1.5"
 
@@ -307,14 +311,56 @@ resource "kubernetes_namespace" "istio-system" {
   }
 }
 
+resource "kubernetes_secret" "kiali" {
+  metadata {
+    name      = "kiali"
+    namespace = "${kubernetes_namespace.istio-system.metadata.0.name}"
+
+    labels {
+      app = "kiali"
+    }
+  }
+
+  data {
+    username   = "${var.kiali_username}"
+    passphrase = "${var.kiali_pass}"
+  }
+
+  type = "Opaque"
+}
+
+resource "kubernetes_secret" "grafana" {
+  metadata {
+    name      = "grafana"
+    namespace = "${kubernetes_namespace.istio-system.metadata.0.name}"
+
+    labels {
+      app = "grafana"
+    }
+  }
+
+  data {
+    username   = "${var.grafana_username}"
+    passphrase = "${var.grafana_pass}"
+  }
+
+  type = "Opaque"
+}
+
+/*
+ToDo: Replace null resource to helm provider & resource
+When this issue has been resolved https://github.com/terraform-providers/terraform-provider-helm/issues/148
+*/
 resource "null_resource" "istio" {
-  depends_on = ["kubernetes_namespace.istio-system", "kubernetes_service_account.tiller", "kubernetes_cluster_role_binding.tiller"]
+  depends_on = ["kubernetes_namespace.istio-system", "kubernetes_service_account.tiller", "kubernetes_cluster_role_binding.tiller", "kubernetes_secret.kiali", "kubernetes_secret.grafana"]
 
   provisioner "local-exec" {
     command = <<EOT
       helm init --upgrade --service-account tiller --wait
       mkdir -p .download
       curl -sL "https://github.com/istio/istio/releases/download/$${ISTIO_VERSION}/istio-$${ISTIO_VERSION}-linux.tar.gz" | tar xz -C ./.download/
+      helm install ./.download/istio-$${ISTIO_VERSION}/install/kubernetes/helm/istio-init --name istio-init --namespace istio-system
+      sleep 30s
       helm install ./.download/istio-$${ISTIO_VERSION}/install/kubernetes/helm/istio --name istio --namespace istio-system \
         --set global.controlPlaneSecurityEnabled=true \
         --set grafana.enabled=true \
@@ -327,3 +373,12 @@ resource "null_resource" "istio" {
     }
   }
 }
+
+/* Run the followings manually for cleanup Istio environment before destroy (Workaround)
+helm delete --purge istio
+helm delete --purge istio-init
+helm reset --force
+ISTIO_VERSION=1.1.2
+kubectl delete -f ./.download/istio-${ISTIO_VERSION}/install/kubernetes/helm/istio-init/files
+*/
+
