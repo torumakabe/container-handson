@@ -3,7 +3,7 @@ provider "azurerm" {
 }
 
 /*
-ToDo: Replace kubeconfig auth. to Terraform data source & add helm providerß
+ToDo: Replace kubeconfig auth. to Terraform data source & add helm provider
 When this helm issue has been resolved https://github.com/terraform-providers/terraform-provider-helm/issues/148
 */
 provider "kubernetes" {
