@@ -19,3 +19,9 @@
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE
+
+    ---
+    This software includes the work that is distributed in the Apache License 2.0 
+
+    HCL resource "kubernetes_deployment" of tiller in main.tf
+    https://github.com/lsst-sqre/terraform-tinfoil-tiller
