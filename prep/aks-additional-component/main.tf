@@ -449,21 +449,35 @@ ToDo: Replace null resource to helm provider & resource
 When this issue has been resolved https://github.com/terraform-providers/terraform-provider-helm/issues/148
 */
 resource "null_resource" "istio" {
-  depends_on = ["kubernetes_namespace.istio-system", "kubernetes_service_account.tiller", "kubernetes_cluster_role_binding.tiller", "kubernetes_secret.kiali", "kubernetes_secret.grafana"]
+  depends_on = ["kubernetes_namespace.istio-system", "kubernetes_service_account.tiller", "kubernetes_cluster_role_binding.tiller", "kubernetes_deployment.tiller", "kubernetes_secret.kiali", "kubernetes_secret.grafana"]
 
   provisioner "local-exec" {
     command = <<EOT
       mkdir -p .download
       curl -sL "https://github.com/istio/istio/releases/download/$${ISTIO_VERSION}/istio-$${ISTIO_VERSION}-linux.tar.gz" | tar xz -C ./.download/
+    EOT
+
+    environment {
+      ISTIO_VERSION = "${var.istio_version}"
+    }
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
       helm init --client-only
-      helm upgrade --install istio-init ./.download/istio-$${ISTIO_VERSION}/install/kubernetes/helm/istio-init  --namespace istio-system --force
-      sleep 30s
+      for i in {1..60}; do helm ls > /dev/null 2>&1 && exit 0 || sleep 1; done; exit 1
+    EOT
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+      helm upgrade --install istio-init ./.download/istio-$${ISTIO_VERSION}/install/kubernetes/helm/istio-init  --namespace istio-system --force --wait
       helm upgrade --install istio ./.download/istio-$${ISTIO_VERSION}/install/kubernetes/helm/istio  --namespace istio-system \
         --set global.controlPlaneSecurityEnabled=true \
         --set grafana.enabled=true \
         --set tracing.enabled=true \
         --set kiali.enabled=true \
-        --force
+        --force --wait
     EOT
 
     environment {
