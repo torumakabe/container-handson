@@ -485,12 +485,3 @@ resource "null_resource" "istio" {
     }
   }
 }
-
-/* Run the followings manually for cleanup Istio environment before destroy (Workaround)
-helm delete --purge istio
-helm delete --purge istio-init
-helm reset --force
-ISTIO_VERSION=1.1.2
-kubectl delete -f ./.download/istio-${ISTIO_VERSION}/install/kubernetes/helm/istio-init/files
-*/
-
