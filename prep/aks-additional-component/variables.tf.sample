@@ -1,0 +1,39 @@
+variable "aks_cluster_name" {
+  default = "your-aks-cluster-name"
+}
+
+variable "aks_cluster_rg" {
+  default = "your-aks-cluster-resource-group-name"
+}
+
+variable "la_workspace_name_for_aks" {
+  default = "your-log-analytics-workspace-name"
+}
+
+variable "la_workspace_rg_for_aks" {
+  default = "your-log-analytics-workspace-resource-group-name"
+}
+
+variable "tiller_image" {
+  default = "gcr.io/kubernetes-helm/tiller:v2.13.1"
+}
+
+variable "istio_version" {
+  default = "1.1.3"
+}
+
+variable "kiali_username" {
+  default = "admin"
+}
+
+variable "kiali_pass" {
+  default = "1f2d1e2e67df"
+}
+
+variable "grafana_username" {
+  default = "admin"
+}
+
+variable "grafana_pass" {
+  default = "1f2d1e2e67df"
+}
