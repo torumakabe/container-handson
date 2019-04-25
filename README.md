@@ -1,1 +1,0 @@
-# Container hands-on on Azure
