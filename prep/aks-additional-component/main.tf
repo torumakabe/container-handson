@@ -3,7 +3,7 @@ provider "azurerm" {
 }
 
 /*
-ToDo: Replace kubeconfig auth. with Terraform data source & add helm provider
+ToDo: Replace kubeconfig auth. withku  Terraform data source & add helm provider
 When this helm issue has been resolved https://github.com/terraform-providers/terraform-provider-helm/issues/148
 */
 provider "kubernetes" {
@@ -465,19 +465,30 @@ resource "null_resource" "istio" {
   provisioner "local-exec" {
     command = <<EOT
       helm init --client-only
-      for i in {1..60}; do helm ls > /dev/null 2>&1 && exit 0 || sleep 1; done; exit 1
+      ./check_tiller.sh
     EOT
+  }
+
+  # Workaround: Verify number of CRDs (53) before Istio installation to avoid validation error https://github.com/istio/istio/issues/11551
+  provisioner "local-exec" {
+    command = <<EOT
+      helm upgrade --install istio-init ./.download/istio-$${ISTIO_VERSION}/install/kubernetes/helm/istio-init  --namespace istio-system --force
+      ./check_crd.sh
+    EOT
+
+    environment {
+      ISTIO_VERSION = "${var.istio_version}"
+    }
   }
 
   provisioner "local-exec" {
     command = <<EOT
-      helm upgrade --install istio-init ./.download/istio-$${ISTIO_VERSION}/install/kubernetes/helm/istio-init  --namespace istio-system --force --wait
       helm upgrade --install istio ./.download/istio-$${ISTIO_VERSION}/install/kubernetes/helm/istio  --namespace istio-system \
         --set global.controlPlaneSecurityEnabled=true \
         --set grafana.enabled=true \
         --set tracing.enabled=true \
         --set kiali.enabled=true \
-        --force --wait
+        --force
     EOT
 
     environment {
