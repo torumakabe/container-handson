@@ -465,7 +465,7 @@ resource "null_resource" "istio" {
   provisioner "local-exec" {
     command = <<EOT
       helm init --client-only
-      ./check_tiller.sh
+      ./verify_tiller.sh
     EOT
   }
 
@@ -473,7 +473,7 @@ resource "null_resource" "istio" {
   provisioner "local-exec" {
     command = <<EOT
       helm upgrade --install istio-init ./.download/istio-$${ISTIO_VERSION}/install/kubernetes/helm/istio-init  --namespace istio-system --force
-      ./check_crd.sh
+      ./verify_crd.sh
     EOT
 
     environment {
