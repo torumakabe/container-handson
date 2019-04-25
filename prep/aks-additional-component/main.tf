@@ -146,7 +146,7 @@ resource "kubernetes_daemonset" "kured" {
         restart_policy       = "Always"
 
         container {
-          image             = "quay.io/weaveworks/kured:1.1.0"
+          image             = "docker.io/weaveworks/kured:1.1.0"
           image_pull_policy = "IfNotPresent"
           name              = "kured"
 
