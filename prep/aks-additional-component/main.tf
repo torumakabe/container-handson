@@ -465,8 +465,13 @@ resource "null_resource" "istio" {
   provisioner "local-exec" {
     command = <<EOT
       helm init --client-only
-      ./verify_tiller.sh
+      kubectl rollout status deployment/$${TILLER_DEPLOYMENT_NAME} -n $${TILLER_NAMESPACE}
     EOT
+
+    environment {
+      TILLER_DEPLOYMENT_NAME = "${kubernetes_deployment.tiller.metadata.0.name}"
+      TILLER_NAMESPACE       = "${kubernetes_deployment.tiller.metadata.0.namespace}"
+    }
   }
 
   # Workaround: Verify number of CRDs (53) before Istio installation to avoid validation error https://github.com/istio/istio/issues/11551
