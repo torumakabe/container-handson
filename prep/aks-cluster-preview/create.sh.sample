@@ -2,7 +2,7 @@
 
 az aks create \
   --resource-group your-aks-cluster-resource-group-name \
-  --name your-aks-cluster-resource-group-name \
+  --name your-aks-cluster-name \
   --kubernetes-version 1.13.5 \
   --node-count 2 \
   --node-vm-size Standard_D2s_v3 \
