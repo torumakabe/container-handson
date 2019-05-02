@@ -5,6 +5,7 @@ az aks create \
   --name your-aks-cluster-name \
   --kubernetes-version 1.13.5 \
   --network-plugin azure \
+  --network-policy azure \
   --node-count 2 \
   --node-vm-size Standard_D2s_v3 \
   --enable-vmss \
