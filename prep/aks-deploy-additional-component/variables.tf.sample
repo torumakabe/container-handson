@@ -23,7 +23,7 @@ variable "tiller_image" {
 }
 
 variable "istio_version" {
-  default = "1.1.3"
+  default = "1.1.5"
 }
 
 variable "kiali_username" {
