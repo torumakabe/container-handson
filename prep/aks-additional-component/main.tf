@@ -255,8 +255,8 @@ resource "kubernetes_cluster_role" "log_reader" {
 
   rule {
     api_groups = [""]
-    resources  = ["pods/log"]
-    verbs      = ["get"]
+    resources  = ["pods/log", "events"]
+    verbs      = ["get", "list"]
   }
 }
 
