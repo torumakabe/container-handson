@@ -502,8 +502,14 @@ resource "null_resource" "istio" {
   }
 }
 
+resource "kubernetes_namespace" "KEDA" {
+  metadata {
+    name = "keda"
+  }
+}
+
 resource "null_resource" "KEDA" {
-  depends_on = ["kubernetes_service_account.tiller", "kubernetes_cluster_role_binding.tiller", "kubernetes_deployment.tiller"]
+  depends_on = ["kubernetes_namespace.KEDA", "kubernetes_service_account.tiller", "kubernetes_cluster_role_binding.tiller", "kubernetes_deployment.tiller"]
 
   provisioner "local-exec" {
     command = <<EOT
