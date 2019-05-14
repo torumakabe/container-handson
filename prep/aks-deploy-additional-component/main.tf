@@ -501,3 +501,27 @@ resource "null_resource" "istio" {
     }
   }
 }
+
+resource "null_resource" "KEDA" {
+  depends_on = ["kubernetes_service_account.tiller", "kubernetes_cluster_role_binding.tiller", "kubernetes_deployment.tiller"]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      helm init --client-only
+      kubectl rollout status deployment/$${TILLER_DEPLOYMENT_NAME} -n $${TILLER_NAMESPACE}
+    EOT
+
+    environment {
+      TILLER_DEPLOYMENT_NAME = "${kubernetes_deployment.tiller.metadata.0.name}"
+      TILLER_NAMESPACE       = "${kubernetes_deployment.tiller.metadata.0.namespace}"
+    }
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+      helm repo add kedacore https://kedacore.azureedge.net/helm
+      helm repo update
+      helm install kedacore/keda-edge --devel --set logLevel=debug --namespace keda --name keda
+    EOT
+  }
+}
