@@ -527,7 +527,7 @@ resource "null_resource" "KEDA" {
     command = <<EOT
       helm repo add kedacore https://kedacore.azureedge.net/helm
       helm repo update
-      helm install kedacore/keda-edge --devel --set logLevel=debug --namespace keda --name keda
+      helm upgrade --install keda kedacore/keda-edge --devel --set logLevel=debug --namespace keda --force
     EOT
   }
 }
