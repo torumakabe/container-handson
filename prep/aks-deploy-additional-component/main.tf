@@ -18,6 +18,12 @@ provider "kubernetes" {
 */
 }
 
+provider "helm" {
+  install_tiller  = false
+  namespace       = "kube-system"
+  service_account = "tiller"
+}
+
 data "azurerm_kubernetes_cluster" "aks" {
   name                = "${var.aks_cluster_name}"
   resource_group_name = "${var.aks_cluster_rg}"
@@ -506,20 +512,27 @@ resource "null_resource" "istio" {
   }
 }
 
-resource "kubernetes_namespace" "KEDA" {
+resource "kubernetes_namespace" "keda" {
   metadata {
     name = "keda"
   }
 }
 
-resource "null_resource" "KEDA" {
-  depends_on = ["kubernetes_namespace.KEDA", "null_resource.tiller_wait"]
+data "helm_repository" "kedacore" {
+  name = "kedacore"
+  url  = "https://kedacore.azureedge.net/helm"
+}
 
-  provisioner "local-exec" {
-    command = <<EOT
-      helm repo add kedacore https://kedacore.azureedge.net/helm
-      helm repo update
-      helm upgrade --install keda kedacore/keda-edge --devel --set logLevel=debug --namespace keda --force
-    EOT
+resource "helm_release" "keda" {
+  depends_on = ["kubernetes_namespace.keda", "null_resource.tiller_wait"]
+  name       = "keda-edge"
+  repository = "${data.helm_repository.kedacore.metadata.0.name}"
+  chart      = "keda-edge"
+  devel      = true
+  namespace  = "keda"
+
+  set {
+    name  = "logLevel"
+    value = "debug"
   }
 }
