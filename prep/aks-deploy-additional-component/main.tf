@@ -402,6 +402,22 @@ resource "kubernetes_deployment" "tiller" {
   }
 }
 
+resource "null_resource" "tiller_wait" {
+  depends_on = ["kubernetes_service_account.tiller", "kubernetes_cluster_role_binding.tiller", "kubernetes_deployment.tiller"]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      helm init --client-only
+      kubectl rollout status deployment/$${TILLER_DEPLOYMENT_NAME} -n $${TILLER_NAMESPACE}
+    EOT
+
+    environment {
+      TILLER_DEPLOYMENT_NAME = "${kubernetes_deployment.tiller.metadata.0.name}"
+      TILLER_NAMESPACE       = "${kubernetes_deployment.tiller.metadata.0.namespace}"
+    }
+  }
+}
+
 resource "kubernetes_namespace" "istio-system" {
   metadata {
     name = "istio-system"
@@ -449,7 +465,7 @@ ToDo: Replace null resource to helm provider & resource
 When this issue has been resolved https://github.com/terraform-providers/terraform-provider-helm/issues/148
 */
 resource "null_resource" "istio" {
-  depends_on = ["kubernetes_namespace.istio-system", "kubernetes_service_account.tiller", "kubernetes_cluster_role_binding.tiller", "kubernetes_deployment.tiller", "kubernetes_secret.kiali", "kubernetes_secret.grafana"]
+  depends_on = ["kubernetes_namespace.istio-system", "null_resource.tiller_wait", "kubernetes_secret.kiali", "kubernetes_secret.grafana"]
 
   provisioner "local-exec" {
     command = <<EOT
@@ -459,18 +475,6 @@ resource "null_resource" "istio" {
 
     environment {
       ISTIO_VERSION = "${var.istio_version}"
-    }
-  }
-
-  provisioner "local-exec" {
-    command = <<EOT
-      helm init --client-only
-      kubectl rollout status deployment/$${TILLER_DEPLOYMENT_NAME} -n $${TILLER_NAMESPACE}
-    EOT
-
-    environment {
-      TILLER_DEPLOYMENT_NAME = "${kubernetes_deployment.tiller.metadata.0.name}"
-      TILLER_NAMESPACE       = "${kubernetes_deployment.tiller.metadata.0.namespace}"
     }
   }
 
@@ -509,19 +513,7 @@ resource "kubernetes_namespace" "KEDA" {
 }
 
 resource "null_resource" "KEDA" {
-  depends_on = ["kubernetes_namespace.KEDA", "kubernetes_service_account.tiller", "kubernetes_cluster_role_binding.tiller", "kubernetes_deployment.tiller"]
-
-  provisioner "local-exec" {
-    command = <<EOT
-      helm init --client-only
-      kubectl rollout status deployment/$${TILLER_DEPLOYMENT_NAME} -n $${TILLER_NAMESPACE}
-    EOT
-
-    environment {
-      TILLER_DEPLOYMENT_NAME = "${kubernetes_deployment.tiller.metadata.0.name}"
-      TILLER_NAMESPACE       = "${kubernetes_deployment.tiller.metadata.0.namespace}"
-    }
-  }
+  depends_on = ["kubernetes_namespace.KEDA", "null_resource.tiller_wait"]
 
   provisioner "local-exec" {
     command = <<EOT
