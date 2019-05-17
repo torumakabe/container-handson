@@ -15,7 +15,7 @@ variable "la_workspace_rg_for_aks" {
 }
 
 variable "kured_image" {
-  default = "docker.io/weaveworks/kured:1.1.0"
+  default = "docker.io/weaveworks/kured:1.2.0"
 }
 
 variable "tiller_image" {
