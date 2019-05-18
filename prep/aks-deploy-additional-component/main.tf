@@ -1,5 +1,5 @@
 provider "azurerm" {
-  version = "~>1.25"
+  version = "~>1.28"
 }
 
 /*
