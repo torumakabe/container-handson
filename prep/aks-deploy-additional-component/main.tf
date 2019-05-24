@@ -8,7 +8,6 @@ When this helm issue has been resolved https://github.com/terraform-providers/te
 */
 provider "kubernetes" {
   version = "~>1.7"
-
   /*
   load_config_file       = false
   host                   = "${data.azurerm_kubernetes_cluster.aks.kube_config.0.host}"
@@ -25,13 +24,13 @@ provider "helm" {
 }
 
 data "azurerm_kubernetes_cluster" "aks" {
-  name                = "${var.aks_cluster_name}"
-  resource_group_name = "${var.aks_cluster_rg}"
+  name                = var.aks_cluster_name
+  resource_group_name = var.aks_cluster_rg
 }
 
 data "azurerm_log_analytics_workspace" "aks" {
-  name                = "${var.la_workspace_name_for_aks}"
-  resource_group_name = "${var.la_workspace_rg_for_aks}"
+  name                = var.la_workspace_name_for_aks
+  resource_group_name = var.la_workspace_rg_for_aks
 }
 
 resource "kubernetes_cluster_role" "kured" {
@@ -130,7 +129,7 @@ resource "kubernetes_daemonset" "kured" {
 
   spec {
     selector {
-      match_labels {
+      match_labels = {
         name = "kured"
       }
     }
@@ -141,7 +140,7 @@ resource "kubernetes_daemonset" "kured" {
 
     template {
       metadata {
-        labels {
+        labels = {
           name = "kured"
         }
       }
@@ -152,7 +151,7 @@ resource "kubernetes_daemonset" "kured" {
         restart_policy       = "Always"
 
         container {
-          image             = "${var.kured_image}"
+          image             = var.kured_image
           image_pull_policy = "IfNotPresent"
           name              = "kured"
 
@@ -172,7 +171,7 @@ resource "kubernetes_daemonset" "kured" {
 
           volume_mount {
             mount_path = "/var/run/secrets/kubernetes.io/serviceaccount"
-            name       = "${kubernetes_service_account.kured.default_secret_name}"
+            name       = kubernetes_service_account.kured.default_secret_name
             read_only  = true
           }
 
@@ -192,10 +191,10 @@ resource "kubernetes_daemonset" "kured" {
         }
 
         volume {
-          name = "${kubernetes_service_account.kured.default_secret_name}"
+          name = kubernetes_service_account.kured.default_secret_name
 
           secret {
-            secret_name = "${kubernetes_service_account.kured.default_secret_name}"
+            secret_name = kubernetes_service_account.kured.default_secret_name
           }
         }
       }
@@ -205,8 +204,8 @@ resource "kubernetes_daemonset" "kured" {
 
 resource "azurerm_monitor_diagnostic_setting" "aks" {
   name                       = "diag_aks"
-  target_resource_id         = "${data.azurerm_kubernetes_cluster.aks.id}"
-  log_analytics_workspace_id = "${data.azurerm_log_analytics_workspace.aks.id}"
+  target_resource_id         = data.azurerm_kubernetes_cluster.aks.id
+  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.aks.id
 
   log {
     category = "kube-apiserver"
@@ -301,7 +300,7 @@ ToDo: Replace it with tillerless Helm v3
 */
 resource "kubernetes_cluster_role_binding" "tiller" {
   metadata {
-    name = "${kubernetes_service_account.tiller.metadata.0.name}"
+    name = kubernetes_service_account.tiller.metadata[0].name
   }
 
   role_ref {
@@ -312,7 +311,7 @@ resource "kubernetes_cluster_role_binding" "tiller" {
 
   subject {
     kind      = "ServiceAccount"
-    name      = "${kubernetes_service_account.tiller.metadata.0.name}"
+    name      = kubernetes_service_account.tiller.metadata[0].name
     namespace = "kube-system"
   }
 }
@@ -323,9 +322,9 @@ ToDo: Replace it with tillerless Helm v3
 resource "kubernetes_deployment" "tiller" {
   metadata {
     name      = "tiller-deploy"
-    namespace = "${kubernetes_service_account.tiller.metadata.0.namespace}"
+    namespace = kubernetes_service_account.tiller.metadata[0].namespace
 
-    labels {
+    labels = {
       name = "tiller"
       app  = "helm"
     }
@@ -335,7 +334,7 @@ resource "kubernetes_deployment" "tiller" {
     replicas = 1
 
     selector {
-      match_labels {
+      match_labels = {
         name = "tiller"
         app  = "helm"
       }
@@ -343,7 +342,7 @@ resource "kubernetes_deployment" "tiller" {
 
     template {
       metadata {
-        labels {
+        labels = {
           name = "tiller"
           app  = "helm"
         }
@@ -351,7 +350,7 @@ resource "kubernetes_deployment" "tiller" {
 
       spec {
         container {
-          image             = "${var.tiller_image}"
+          image             = var.tiller_image
           name              = "tiller"
           image_pull_policy = "IfNotPresent"
           command           = ["/tiller"]
@@ -359,7 +358,7 @@ resource "kubernetes_deployment" "tiller" {
 
           env {
             name  = "TILLER_NAMESPACE"
-            value = "${kubernetes_service_account.tiller.metadata.0.namespace}"
+            value = kubernetes_service_account.tiller.metadata[0].namespace
           }
 
           env {
@@ -389,37 +388,43 @@ resource "kubernetes_deployment" "tiller" {
 
           volume_mount {
             mount_path = "/var/run/secrets/kubernetes.io/serviceaccount"
-            name       = "${kubernetes_service_account.tiller.default_secret_name}"
+            name       = kubernetes_service_account.tiller.default_secret_name
             read_only  = true
           }
         }
 
         volume {
-          name = "${kubernetes_service_account.tiller.default_secret_name}"
+          name = kubernetes_service_account.tiller.default_secret_name
 
           secret {
-            secret_name = "${kubernetes_service_account.tiller.default_secret_name}"
+            secret_name = kubernetes_service_account.tiller.default_secret_name
           }
         }
 
-        service_account_name = "${kubernetes_service_account.tiller.metadata.0.name}"
+        service_account_name = kubernetes_service_account.tiller.metadata[0].name
       }
     }
   }
 }
 
 resource "null_resource" "tiller_wait" {
-  depends_on = ["kubernetes_service_account.tiller", "kubernetes_cluster_role_binding.tiller", "kubernetes_deployment.tiller"]
+  depends_on = [
+    kubernetes_service_account.tiller,
+    kubernetes_cluster_role_binding.tiller,
+    kubernetes_deployment.tiller,
+  ]
 
   provisioner "local-exec" {
     command = <<EOT
       helm init --client-only
       kubectl rollout status deployment/$${TILLER_DEPLOYMENT_NAME} -n $${TILLER_NAMESPACE}
-    EOT
+    
+EOT
 
-    environment {
-      TILLER_DEPLOYMENT_NAME = "${kubernetes_deployment.tiller.metadata.0.name}"
-      TILLER_NAMESPACE       = "${kubernetes_deployment.tiller.metadata.0.namespace}"
+
+    environment = {
+      TILLER_DEPLOYMENT_NAME = kubernetes_deployment.tiller.metadata[0].name
+      TILLER_NAMESPACE = kubernetes_deployment.tiller.metadata[0].namespace
     }
   }
 }
@@ -432,17 +437,17 @@ resource "kubernetes_namespace" "istio-system" {
 
 resource "kubernetes_secret" "kiali" {
   metadata {
-    name      = "kiali"
-    namespace = "${kubernetes_namespace.istio-system.metadata.0.name}"
+    name = "kiali"
+    namespace = kubernetes_namespace.istio-system.metadata[0].name
 
-    labels {
+    labels = {
       app = "kiali"
     }
   }
 
-  data {
-    username   = "${var.kiali_username}"
-    passphrase = "${var.kiali_pass}"
+  data = {
+    username = var.kiali_username
+    passphrase = var.kiali_pass
   }
 
   type = "Opaque"
@@ -450,17 +455,17 @@ resource "kubernetes_secret" "kiali" {
 
 resource "kubernetes_secret" "grafana" {
   metadata {
-    name      = "grafana"
-    namespace = "${kubernetes_namespace.istio-system.metadata.0.name}"
+    name = "grafana"
+    namespace = kubernetes_namespace.istio-system.metadata[0].name
 
-    labels {
+    labels = {
       app = "grafana"
     }
   }
 
-  data {
-    username   = "${var.grafana_username}"
-    passphrase = "${var.grafana_pass}"
+  data = {
+    username = var.grafana_username
+    passphrase = var.grafana_pass
   }
 
   type = "Opaque"
@@ -471,43 +476,55 @@ ToDo: Replace null resource to helm provider & resource
 When this issue has been resolved https://github.com/terraform-providers/terraform-provider-helm/issues/148
 */
 resource "null_resource" "istio" {
-  depends_on = ["kubernetes_namespace.istio-system", "null_resource.tiller_wait", "kubernetes_secret.kiali", "kubernetes_secret.grafana"]
+  depends_on = [
+    kubernetes_namespace.istio-system,
+    null_resource.tiller_wait,
+    kubernetes_secret.kiali,
+    kubernetes_secret.grafana,
+  ]
 
   provisioner "local-exec" {
     command = <<EOT
       mkdir -p .download
       curl -sL "https://github.com/istio/istio/releases/download/$${ISTIO_VERSION}/istio-$${ISTIO_VERSION}-linux.tar.gz" | tar xz -C ./.download/
-    EOT
+    
+EOT
 
-    environment {
-      ISTIO_VERSION = "${var.istio_version}"
-    }
-  }
 
-  # Workaround: Verify number of CRDs (53) before Istio installation to avoid validation error https://github.com/istio/istio/issues/11551
-  provisioner "local-exec" {
-    command = <<EOT
+environment = {
+ISTIO_VERSION = var.istio_version
+}
+}
+
+# Workaround: Verify number of CRDs (53) before Istio installation to avoid validation error https://github.com/istio/istio/issues/11551
+# Workaround: Verify number of CRDs (53) before Istio installation to avoid validation error https://github.com/istio/istio/issues/11551
+provisioner "local-exec" {
+command = <<EOT
       helm upgrade --install istio-init ./.download/istio-$${ISTIO_VERSION}/install/kubernetes/helm/istio-init  --namespace istio-system --force
       ./verify_crd.sh
-    EOT
+    
+EOT
 
-    environment {
-      ISTIO_VERSION = "${var.istio_version}"
-    }
-  }
 
-  provisioner "local-exec" {
-    command = <<EOT
+environment = {
+ISTIO_VERSION = var.istio_version
+}
+}
+
+provisioner "local-exec" {
+command = <<EOT
       helm upgrade --install istio ./.download/istio-$${ISTIO_VERSION}/install/kubernetes/helm/istio  --namespace istio-system \
         --set global.controlPlaneSecurityEnabled=true \
         --set grafana.enabled=true \
         --set tracing.enabled=true \
         --set kiali.enabled=true \
         --force
-    EOT
+    
+EOT
 
-    environment {
-      ISTIO_VERSION = "${var.istio_version}"
+
+    environment = {
+      ISTIO_VERSION = var.istio_version
     }
   }
 }
@@ -524,9 +541,12 @@ data "helm_repository" "kedacore" {
 }
 
 resource "helm_release" "keda" {
-  depends_on = ["kubernetes_namespace.keda", "null_resource.tiller_wait"]
+  depends_on = [
+    kubernetes_namespace.keda,
+    null_resource.tiller_wait,
+  ]
   name       = "keda-edge"
-  repository = "${data.helm_repository.kedacore.metadata.0.name}"
+  repository = data.helm_repository.kedacore.metadata[0].name
   chart      = "keda-edge"
   devel      = true
   namespace  = "keda"
@@ -536,3 +556,4 @@ resource "helm_release" "keda" {
     value = "debug"
   }
 }
+
