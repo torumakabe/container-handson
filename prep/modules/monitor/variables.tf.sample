@@ -1,0 +1,7 @@
+variable "aks_cluster_name" {}
+
+variable "aks_cluster_rg" {}
+
+variable "la_workspace_name_for_aks" {}
+
+variable "la_workspace_rg_for_aks" {}
