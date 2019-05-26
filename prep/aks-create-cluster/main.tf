@@ -1,5 +1,5 @@
 provider "azurerm" {
-  version = "~>1.28"
+  version = "~>1.29"
 }
 
 data "azurerm_log_analytics_workspace" "aks" {
