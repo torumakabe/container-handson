@@ -1,0 +1,5 @@
+variable "aks_cluster_rg" {}
+
+variable "aks_cluster_location" {}
+
+variable "default_vnet_name" {}
