@@ -15,10 +15,3 @@ resource "azurerm_subnet" "aks" {
   virtual_network_name = azurerm_virtual_network.default_vnet.name
   address_prefix       = "10.240.0.0/16"
 }
-
-resource "azurerm_subnet" "appgw" {
-  name                 = "appgw_subnet"
-  resource_group_name  = var.aks_cluster_rg
-  virtual_network_name = azurerm_virtual_network.default_vnet.name
-  address_prefix       = "10.1.0.0/16"
-}
