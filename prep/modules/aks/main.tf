@@ -18,7 +18,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
     name            = "pool1"
     type            = "VirtualMachineScaleSets"
     vnet_subnet_id  = var.aks_subnet_id
-    count           = 2
+    count           = 3
     vm_size         = "Standard_D2s_v3"
     os_type         = "Linux"
     os_disk_size_gb = 30
