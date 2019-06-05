@@ -5,14 +5,6 @@ module "network" {
   aks_cluster_location = var.aks_cluster_location
 }
 
-module "appgw" {
-  source = "../modules/appgw"
-
-  aks_cluster_rg       = var.aks_cluster_rg
-  aks_cluster_location = var.aks_cluster_location
-  default_vnet_name    = module.network.default_vnet_name
-}
-
 module "aks" {
   source = "../modules/aks"
 
