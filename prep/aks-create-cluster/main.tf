@@ -18,3 +18,9 @@ module "aks" {
   la_workspace_rg_for_aks         = var.la_workspace_rg_for_aks
 
 }
+
+module "tiller" {
+  source = "../modules/tiller"
+
+  tiller_image = var.tiller_image
+}
