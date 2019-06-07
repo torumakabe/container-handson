@@ -22,6 +22,7 @@ module "tiller" {
   tiller_image = var.tiller_image
 }
 
+/*
 module "istio" {
   source           = "../modules/istio"
   tiller_wait_flag = module.tiller.wait_flag
@@ -39,3 +40,4 @@ module "keda" {
   tiller_wait_flag = module.tiller.wait_flag
 }
 
+*/
