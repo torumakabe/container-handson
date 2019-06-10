@@ -6,10 +6,6 @@ variable "aks_cluster_location" {}
 
 variable "aks_subnet_id" {}
 
-variable "service_principal" {}
-
-variable "service_principal_client_secret" {}
-
 variable "la_workspace_name_for_aks" {}
 
 variable "la_workspace_rg_for_aks" {}

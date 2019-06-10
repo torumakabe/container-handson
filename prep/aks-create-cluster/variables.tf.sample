@@ -10,22 +10,10 @@ variable "aks_cluster_location" {
   default = "japaneast"
 }
 
-variable "service_principal" {
-  default = "your-service-principal"
-}
-
-variable "service_principal_client_secret" {
-  default = "your-service-principal-client-secret"
-}
-
 variable "la_workspace_name_for_aks" {
   default = "your-log-analytics-workspace-name"
 }
 
 variable "la_workspace_rg_for_aks" {
   default = "your-log-analytics-workspace-resource-group-name"
-}
-
-variable "tiller_image" {
-  default = "gcr.io/kubernetes-helm/tiller:v2.13.1"
 }

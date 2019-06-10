@@ -2,12 +2,55 @@ provider "azurerm" {
   version = "~>1.29"
 }
 
+provider "azuread" {
+  version = "~>0.4"
+}
+
+provider "random" {
+  version = "~>2.0"
+}
+
+data "azurerm_subscription" "current" {}
+
 data "azurerm_log_analytics_workspace" "aks" {
   name                = var.la_workspace_name_for_aks
   resource_group_name = var.la_workspace_rg_for_aks
 }
 
+resource "azuread_application" "aks" {
+  name            = "${var.aks_cluster_name}-aadapp"
+  identifier_uris = ["https://${var.aks_cluster_name}-aadapp"]
+}
+
+resource "azuread_service_principal" "aks" {
+  application_id = "${azuread_application.aks.application_id}"
+}
+
+resource "random_string" "password" {
+  length  = 32
+  special = true
+}
+
+resource "azuread_service_principal_password" "aks" {
+  end_date             = "2299-12-30T23:00:00Z" # Forever
+  service_principal_id = azuread_service_principal.aks.id
+  value                = random_string.password.result
+}
+
+resource "azurerm_role_assignment" "aks" {
+  depends_on           = ["azuread_service_principal_password.aks"]
+  scope                = data.azurerm_subscription.current.id
+  role_definition_name = "Contributor"
+  principal_id         = azuread_service_principal.aks.id
+
+  // Waiting for AAD global replication
+  provisioner "local-exec" {
+    command = "sleep 30"
+  }
+}
+
 resource "azurerm_kubernetes_cluster" "aks" {
+  depends_on          = ["azurerm_role_assignment.aks"]
   name                = var.aks_cluster_name
   kubernetes_version  = "1.13.5"
   location            = var.aks_cluster_location
@@ -25,8 +68,8 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 
   service_principal {
-    client_id     = var.service_principal
-    client_secret = var.service_principal_client_secret
+    client_id     = azuread_application.aks.application_id
+    client_secret = random_string.password.result
   }
 
   role_based_access_control {
