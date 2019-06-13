@@ -7,5 +7,3 @@ variable "kiali_pass" {}
 variable "grafana_username" {}
 
 variable "grafana_pass" {}
-
-variable "tiller_wait_flag" {}

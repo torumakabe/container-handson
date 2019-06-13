@@ -32,7 +32,6 @@ data "helm_repository" "kedacore" {
 
 resource "helm_release" "keda" {
   depends_on = [
-    var.tiller_wait_flag,
     kubernetes_namespace.keda
   ]
   name       = "keda-edge"

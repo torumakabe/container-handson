@@ -9,7 +9,3 @@ variable "aks_cluster_rg" {
 variable "aks_cluster_location" {
   default = "japaneast"
 }
-
-variable "tiller_image" {
-  default = "gcr.io/kubernetes-helm/tiller:v2.13.1"
-}

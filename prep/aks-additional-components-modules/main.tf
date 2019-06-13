@@ -16,16 +16,9 @@ module "monitor" {
 
 }
 
-module "tiller" {
-  source = "../modules/tiller"
-
-  tiller_image = var.tiller_image
-}
-
 /*
 module "istio" {
   source           = "../modules/istio"
-  tiller_wait_flag = module.tiller.wait_flag
 
   istio_version    = var.istio_version
   kiali_username   = var.kiali_username
@@ -37,7 +30,6 @@ module "istio" {
 
 module "keda" {
   source           = "../modules/keda"
-  tiller_wait_flag = module.tiller.wait_flag
 }
 
 */
