@@ -3,7 +3,7 @@ ARG GO_VERSION=1.12.6
 FROM golang:${GO_VERSION}-alpine AS build-stage
 RUN apk add --no-cache ca-certificates git
 WORKDIR /src
-COPY ./go.mod ./
+COPY ./go.mod ./go.sum ./
 RUN go mod download
 COPY . .
 RUN go build -o /app main.go

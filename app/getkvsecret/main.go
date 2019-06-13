@@ -20,17 +20,19 @@ func getKeyvaultSecret(w http.ResponseWriter, r *http.Request) {
 	keyClient := keyvault.New()
 	authorizer, err := auth.NewAuthorizerFromEnvironment()
 
-	if err == nil {
-		keyClient.Authorizer = authorizer
+	if err != nil {
+		log.Printf("failed to get your authorizer object: %v", err)
+		return
 	}
+	keyClient.Authorizer = authorizer
 
 	secret, err := keyClient.GetSecret(context.Background(), fmt.Sprintf("https://%s.vault.azure.net", keyvaultName), keyvaultSecretName, keyvaultSecretVersion)
 	if err != nil {
-		log.Printf("failed to retrieve the Keyvault secret: %v", err)
+		log.Printf("failed to get your Keyvault secret: %v", err)
 		return
 	}
 
-	io.WriteString(w, fmt.Sprintf("The value of the Keyvault secret is: %v", *secret.Value))
+	io.WriteString(w, fmt.Sprintf("The value of secret: %v", *secret.Value))
 }
 
 func main() {
