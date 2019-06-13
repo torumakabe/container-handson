@@ -21,14 +21,14 @@ func getKeyvaultSecret(w http.ResponseWriter, r *http.Request) {
 	authorizer, err := auth.NewAuthorizerFromEnvironment()
 
 	if err != nil {
-		log.Printf("failed to get your authorizer object: %v", err)
+		log.Printf("unable to get your authorizer object: %v", err)
 		return
 	}
 	keyClient.Authorizer = authorizer
 
 	secret, err := keyClient.GetSecret(context.Background(), fmt.Sprintf("https://%s.vault.azure.net", keyvaultName), keyvaultSecretName, keyvaultSecretVersion)
 	if err != nil {
-		log.Printf("failed to get your Keyvault secret: %v", err)
+		log.Printf("unable to get your Keyvault secret: %v", err)
 		return
 	}
 
