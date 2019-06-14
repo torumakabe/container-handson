@@ -90,7 +90,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
   provisioner "local-exec" {
     command = <<EOT
-      az aks get-credentials -g ${var.aks_cluster_rg} -n ${self.name};
+      az aks get-credentials -g ${var.aks_cluster_rg} -n ${self.name} --admin --overwrite-existing;
     EOT
   }
 }
