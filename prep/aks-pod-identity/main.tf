@@ -22,6 +22,44 @@ resource "azurerm_user_assigned_identity" "aad_pod_identity" {
   name = "aad-pod-identity"
 }
 
+resource "azurerm_key_vault" "aks" {
+  name                = "aksvault"
+  location            = var.aks_cluster_location
+  resource_group_name = var.aks_cluster_rg
+  tenant_id           = var.aad_tenant_id
+
+  sku {
+    name = "standard"
+  }
+
+  access_policy {
+    tenant_id = var.aad_tenant_id
+    object_id = azurerm_user_assigned_identity.aad_pod_identity.client_id
+
+    secret_permissions = [
+      "get", "list",
+    ]
+  }
+}
+
+resource "azurerm_key_vault_secret" "sample" {
+  name         = "sample"
+  value        = var.secret_value
+  key_vault_id = azurerm_key_vault.aks.id
+}
+
+resource "azurerm_role_assignment" "pod_identitiy_to_vault" {
+  scope                = azurerm_key_vault.aks.id
+  role_definition_name = "Reader"
+  principal_id         = azurerm_user_assigned_identity.aad_pod_identity.principal_id
+}
+
+resource "azurerm_role_assignment" "aks_to_pod_identity" {
+  scope                = azurerm_user_assigned_identity.aad_pod_identity.id
+  role_definition_name = "Managed Identity Operator"
+  principal_id         = var.aks_cluster_sp_id
+}
+
 resource "helm_release" "aad_pod_identity" {
   depends_on = [
   ]
