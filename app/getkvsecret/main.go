@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/2016-10-01/keyvault"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/Azure/azure-sdk-for-go/services/keyvault/auth"
 )
 
 func getKeyvaultSecret(w http.ResponseWriter, r *http.Request) {
@@ -27,6 +27,7 @@ func getKeyvaultSecret(w http.ResponseWriter, r *http.Request) {
 	keyClient.Authorizer = authorizer
 
 	secret, err := keyClient.GetSecret(context.Background(), fmt.Sprintf("https://%s.vault.azure.net", keyvaultName), keyvaultSecretName, keyvaultSecretVersion)
+	
 	if err != nil {
 		log.Printf("unable to get your Keyvault secret: %v", err)
 		return

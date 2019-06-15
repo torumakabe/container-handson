@@ -20,14 +20,14 @@ spec:
     spec:
       containers:
       - name: getkvsecret
-        image: torumakabe/getkvsecret:0.0.2
+        image: torumakabe/getkvsecret:0.0.3
         env:
         - name: AZURE_KEYVAULT_NAME
-          value: tomakabe-preview-eval
+          value: your-vault-name
         - name: AZURE_KEYVAULT_SECRET_NAME
-          value: sample
+          value: your-secret-name
         - name: AZURE_KEYVAULT_SECRET_VERSION
-          value: 1e6b811d08434fc9b02ba37d3ce100bd
+          value: your-secret-version
 ---
 apiVersion: v1
 kind: Service
