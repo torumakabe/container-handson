@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: getkvsecret
+    aadpodidbinding: sample
+  name: getkvsecret
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: getkvsecret
+  template:
+    metadata:
+      labels:
+        app: getkvsecret
+        aadpodidbinding: sample
+      name: getkvsecret
+    spec:
+      containers:
+      - name: getkvsecret
+        image: torumakabe/getkvsecret:0.0.2
+        env:
+        - name: AZURE_KEYVAULT_NAME
+          value: tomakabe-preview-eval
+        - name: AZURE_KEYVAULT_SECRET_NAME
+          value: sample
+        - name: AZURE_KEYVAULT_SECRET_VERSION
+          value: 1e6b811d08434fc9b02ba37d3ce100bd
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: getkvsecret
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: getkvsecret
+  type: LoadBalancer
