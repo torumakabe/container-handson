@@ -10,10 +10,14 @@ variable "aks_cluster_location" {
   default = "japaneast"
 }
 
-variable "aks_cluster_sp_id" {
-  default = "your-aks-cluster-service-principal-id ---- $(az ad sp list --display-name $(az ad app show --id $(az aks show -g your-aks-cluster-resource-group-name -n your-aks-cluster-name --query servicePrincipalProfile.clientId -o tsv) --query displayName -o tsv) --query [].objectId -o tsv)"
+variable "aks_cluster_sp_object_id" {
+  default = "your-aks-cluster-service-principal-object-id ---or--- $(az ad sp list --display-name $(az ad app show --id $(az aks show -g your-aks-cluster-resource-group-name -n your-aks-cluster-name --query servicePrincipalProfile.clientId -o tsv) --query displayName -o tsv) --query [].objectId -o tsv)"
 }
 
-variable "aad_tenant_id" {
-  default = "your-azuread_tenant_id ---- $(az account show --query tenantId -o tsv)"
+variable "user_principal_name" {
+  default = "your-user-principal-name"
+}
+
+variable "secret_value" {
+  default = "Selfish sell fish."
 }

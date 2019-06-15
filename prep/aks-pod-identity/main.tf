@@ -2,12 +2,22 @@ provider "azurerm" {
   version = "~>1.30"
 }
 
+provider "azuread" {
+  version = "~>0.4"
+}
+
 provider "helm" {
   version = "~>0.9"
 
   install_tiller  = false
   namespace       = "kube-system"
   service_account = "tiller"
+}
+
+data "azurerm_client_config" "current" {}
+
+data "azuread_user" "current" {
+  user_principal_name = var.user_principal_name
 }
 
 data "helm_repository" "spv" {
@@ -23,21 +33,36 @@ resource "azurerm_user_assigned_identity" "aad_pod_identity" {
 }
 
 resource "azurerm_key_vault" "aks" {
-  name                = "aksvault"
+  name                = "${var.aks_cluster_name}"
   location            = var.aks_cluster_location
   resource_group_name = var.aks_cluster_rg
-  tenant_id           = var.aad_tenant_id
+  tenant_id           = data.azurerm_client_config.current.tenant_id
 
   sku {
     name = "standard"
   }
 
   access_policy {
-    tenant_id = var.aad_tenant_id
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azuread_user.current.id
+
+    secret_permissions = [
+      "set",
+      "get",
+      "list",
+      "delete"
+    ]
+  }
+
+  access_policy {
+
+    tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = azurerm_user_assigned_identity.aad_pod_identity.client_id
 
     secret_permissions = [
-      "get", "list",
+
+      "get",
+      "list"
     ]
   }
 }
@@ -57,7 +82,7 @@ resource "azurerm_role_assignment" "pod_identitiy_to_vault" {
 resource "azurerm_role_assignment" "aks_to_pod_identity" {
   scope                = azurerm_user_assigned_identity.aad_pod_identity.id
   role_definition_name = "Managed Identity Operator"
-  principal_id         = var.aks_cluster_sp_id
+  principal_id         = var.aks_cluster_sp_object_id
 }
 
 resource "helm_release" "aad_pod_identity" {
@@ -79,7 +104,7 @@ resource "helm_release" "aad_pod_identity" {
 
   set {
     name  = "azureIdentityBinding.selector"
-    value = "demo"
+    value = "sample"
   }
 }
 
