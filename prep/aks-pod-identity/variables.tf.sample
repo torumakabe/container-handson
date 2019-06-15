@@ -21,3 +21,19 @@ variable "user_principal_name" {
 variable "secret_value" {
   default = "Selfish sell fish."
 }
+
+variable "aad_pod_identity_helm_repository_name" {
+  default = "your-helm-repo-name"
+}
+
+variable "aad_pod_identity_helm_repository_url" {
+  default = "your-helm-repo-url"
+}
+
+variable "aad_pod_identity_helm_repository_username" {
+  default = "your-helm-repo-username"
+}
+
+variable "aad_pod_identity_helm_repository_password" {
+  default = "your-helm-repo-passwrod"
+}

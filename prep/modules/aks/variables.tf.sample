@@ -4,7 +4,7 @@ variable "aks_cluster_rg" {}
 
 variable "aks_cluster_location" {}
 
-variable "subnet_aks_id" {}
+variable "aks_subnet_id" {}
 
 variable "la_workspace_name" {}
 
