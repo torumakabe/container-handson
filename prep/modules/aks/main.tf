@@ -13,8 +13,8 @@ provider "random" {
 data "azurerm_subscription" "current" {}
 
 data "azurerm_log_analytics_workspace" "aks" {
-  name                = var.la_workspace_name_for_aks
-  resource_group_name = var.la_workspace_rg_for_aks
+  name                = var.la_workspace_name
+  resource_group_name = var.la_workspace_rg
 }
 
 resource "azuread_application" "aks" {
@@ -60,7 +60,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   agent_pool_profile {
     name            = "pool1"
     type            = "VirtualMachineScaleSets"
-    vnet_subnet_id  = var.aks_subnet_id
+    vnet_subnet_id  = var.subnet_aks_id
     count           = 3
     vm_size         = "Standard_D2s_v3"
     os_type         = "Linux"

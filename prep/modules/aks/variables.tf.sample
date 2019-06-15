@@ -4,11 +4,11 @@ variable "aks_cluster_rg" {}
 
 variable "aks_cluster_location" {}
 
-variable "aks_subnet_id" {}
+variable "subnet_aks_id" {}
 
-variable "la_workspace_name_for_aks" {}
+variable "la_workspace_name" {}
 
-variable "la_workspace_rg_for_aks" {}
+variable "la_workspace_rg" {}
 
 variable "tiller_image" {}
 

@@ -23,8 +23,8 @@ data "azurerm_kubernetes_cluster" "aks" {
 }
 
 data "azurerm_log_analytics_workspace" "aks" {
-  name                = var.la_workspace_name_for_aks
-  resource_group_name = var.la_workspace_rg_for_aks
+  name                = var.la_workspace_name
+  resource_group_name = var.la_workspace_rg
 }
 
 resource "azurerm_monitor_diagnostic_setting" "aks" {

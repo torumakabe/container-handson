@@ -9,10 +9,10 @@ module "kured" {
 module "monitor" {
   source = "../modules/monitor"
 
-  aks_cluster_name          = var.aks_cluster_name
-  aks_cluster_rg            = var.aks_cluster_rg
-  la_workspace_name_for_aks = var.la_workspace_name_for_aks
-  la_workspace_rg_for_aks   = var.la_workspace_rg_for_aks
+  aks_cluster_name  = var.aks_cluster_name
+  aks_cluster_rg    = var.aks_cluster_rg
+  la_workspace_name = var.la_workspace_name
+  la_workspace_rg   = var.la_workspace_rg
 
 }
 

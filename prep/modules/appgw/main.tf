@@ -14,7 +14,7 @@ locals {
 resource "azurerm_subnet" "ingress_appgw" {
   name                 = "ingress_appgw_subnet"
   resource_group_name  = var.aks_cluster_rg
-  virtual_network_name = var.default_vnet_name
+  virtual_network_name = var.vnet_default_name
   address_prefix       = "10.1.0.0/16"
 }
 

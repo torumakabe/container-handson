@@ -1,6 +1,6 @@
-output "default_vnet_name" {
-  value = azurerm_virtual_network.default_vnet.name
+output "vnet_default_name" {
+  value = azurerm_virtual_network.vnet_default.name
 }
-output "aks_subnet_id" {
+output "subnet_aks_id" {
   value = azurerm_subnet.aks.id
 }

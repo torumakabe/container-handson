@@ -10,11 +10,11 @@ variable "kured_image" {
   default = "docker.io/weaveworks/kured:1.2.0"
 }
 
-variable "la_workspace_name_for_aks" {
+variable "la_workspace_name" {
   default = "your-log-analytics-workspace-name"
 }
 
-variable "la_workspace_rg_for_aks" {
+variable "la_workspace_rg" {
   default = "your-log-analytics-workspace-resource-group-name"
 }
 
