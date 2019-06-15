@@ -20,9 +20,11 @@ data "azuread_user" "current" {
   user_principal_name = var.user_principal_name
 }
 
-data "helm_repository" "spv" {
-  name = "spv"
-  url  = "https://charts.spvapi.no"
+data "helm_repository" "aad_pod_identity" {
+  name     = var.aad_pod_identity_helm_repository_name
+  url      = var.aad_pod_identity_helm_repository_url
+  username = var.aad_pod_identity_helm_repository_username
+  password = var.aad_pod_identity_helm_repository_password
 }
 
 resource "azurerm_user_assigned_identity" "aad_pod_identity" {
@@ -57,7 +59,7 @@ resource "azurerm_key_vault" "aks" {
   access_policy {
 
     tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = azurerm_user_assigned_identity.aad_pod_identity.client_id
+    object_id = azurerm_user_assigned_identity.aad_pod_identity.principal_id
 
     secret_permissions = [
 
@@ -86,10 +88,8 @@ resource "azurerm_role_assignment" "aks_to_pod_identity" {
 }
 
 resource "helm_release" "aad_pod_identity" {
-  depends_on = [
-  ]
   name       = "aad-pod-identity"
-  repository = data.helm_repository.spv.metadata[0].name
+  repository = data.helm_repository.aad_pod_identity.metadata[0].name
   chart      = "aad-pod-identity"
 
   set {
