@@ -1,0 +1,39 @@
+variable "aks_cluster_name" {
+  default = "your-aks-cluster-name"
+}
+
+variable "aks_cluster_rg" {
+  default = "your-aks-cluster-resource-group-name"
+}
+
+variable "aks_cluster_location" {
+  default = "japaneast"
+}
+
+variable "aks_cluster_sp_object_id" {
+  default = "your-aks-cluster-service-principal-object-id ---or--- $(az ad sp list --display-name $(az ad app show --id $(az aks show -g your-aks-cluster-resource-group-name -n your-aks-cluster-name --query servicePrincipalProfile.clientId -o tsv) --query displayName -o tsv) --query [].objectId -o tsv)"
+}
+
+variable "user_principal_name" {
+  default = "your-user-principal-name"
+}
+
+variable "secret_value" {
+  default = "Selfish sell fish."
+}
+
+variable "aad_pod_identity_helm_repository_name" {
+  default = "your-helm-repo-name"
+}
+
+variable "aad_pod_identity_helm_repository_url" {
+  default = "your-helm-repo-url"
+}
+
+variable "aad_pod_identity_helm_repository_username" {
+  default = "your-helm-repo-username"
+}
+
+variable "aad_pod_identity_helm_repository_password" {
+  default = "your-helm-repo-passwrod"
+}

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: getsecret
+    aadpodidbinding: joke
+  name: getsecret
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: getsecret
+  template:
+    metadata:
+      labels:
+        app: getsecret
+        aadpodidbinding: joke
+      name: getsecret
+    spec:
+      containers:
+      - name: getsecret
+        image: torumakabe/getsecret:flexvol
+        volumeMounts:
+        - name: joke
+          mountPath: /kvmnt
+          readOnly: true
+      volumes:
+      - name: joke
+        flexVolume:
+          driver: "azure/kv"
+          options: 
+            usepodidentity: "true"
+            keyvaultname: "your-keyvault-name"
+            keyvaultobjectnames: joke
+            keyvaultobjecttypes: secret
+            keyvaultobjectversions: ""  #[OPTIONAL] will get latest if empty
+            resourcegroup: "your-keyvault-rg"
+            subscriptionid: "your-subscription-id"
+            tenantid: "your-tenant-id"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: getsecret
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: getsecret
+  type: LoadBalancer
