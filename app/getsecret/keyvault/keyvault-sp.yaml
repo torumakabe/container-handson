@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: getsecret
+  name: getsecret
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: getsecret
+  template:
+    metadata:
+      labels:
+        app: getsecret
+      name: getsecret
+    spec:
+      containers:
+      - name: getsecret
+        image: torumakabe/getsecret:keyvault
+        env:
+        - name: AZURE_KEYVAULT_NAME
+          value: your-keyvault-name
+        - name: AZURE_KEYVAULT_SECRET_NAME
+          value: joke
+        - name: AZURE_KEYVAULT_SECRET_VERSION
+          value: your-keyvault-secret-version
+        - name: AZURE_TENANT_ID
+          valueFrom:
+            secretKeyRef:
+              name: joke-sp
+              key: tenantId
+        - name: AZURE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: joke-sp
+              key: clientId
+        - name: AZURE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: joke-sp
+              key: clientSecret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: getsecret
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: getsecret
+  type: LoadBalancer

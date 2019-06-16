@@ -69,8 +69,8 @@ resource "azurerm_key_vault" "aks" {
   }
 }
 
-resource "azurerm_key_vault_secret" "sample" {
-  name         = "sample"
+resource "azurerm_key_vault_secret" "joke" {
+  name         = "joke"
   value        = var.secret_value
   key_vault_id = azurerm_key_vault.aks.id
 }
@@ -104,7 +104,7 @@ resource "helm_release" "aad_pod_identity" {
 
   set {
     name  = "azureIdentityBinding.selector"
-    value = "sample"
+    value = "joke"
   }
 }
 

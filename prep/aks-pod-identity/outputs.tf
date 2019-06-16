@@ -3,9 +3,9 @@ output "keyvault_name" {
 }
 
 output "keyvault_secret_name" {
-  value = azurerm_key_vault_secret.sample.name
+  value = azurerm_key_vault_secret.joke.name
 }
 
 output "keyvault_secret_version" {
-  value = azurerm_key_vault_secret.sample.version
+  value = azurerm_key_vault_secret.joke.version
 }

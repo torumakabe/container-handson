@@ -24,6 +24,7 @@ func getKeyvaultSecret(w http.ResponseWriter, r *http.Request) {
 		log.Printf("unable to get your authorizer object: %v", err)
 		return
 	}
+
 	keyClient.Authorizer = authorizer
 
 	secret, err := keyClient.GetSecret(context.Background(), fmt.Sprintf("https://%s.vault.azure.net", keyvaultName), keyvaultSecretName, keyvaultSecretVersion)
@@ -33,7 +34,7 @@ func getKeyvaultSecret(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	io.WriteString(w, fmt.Sprintf("The value of secret: %v", *secret.Value))
+	io.WriteString(w, fmt.Sprintf("Can I tell you my awesome dad joke?: %v", *secret.Value))
 }
 
 func main() {

@@ -1,4 +1,4 @@
-module github.com/ToruMakabe/getkvsecret
+module github.com/ToruMakabe/getsecret/keyvault
 
 go 1.12
 
