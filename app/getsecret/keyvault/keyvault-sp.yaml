@@ -24,8 +24,8 @@ spec:
           value: your-keyvault-name
         - name: AZURE_KEYVAULT_SECRET_NAME
           value: joke
-        - name: AZURE_KEYVAULT_SECRET_VERSION
-          value: your-keyvault-secret-version
+#       - name: AZURE_KEYVAULT_SECRET_VERSION
+#         value: your-keyvault-secret-version  #[OPTIONAL] will get latest if commented out
         - name: AZURE_TENANT_ID
           valueFrom:
             secretKeyRef:
