@@ -105,6 +105,25 @@ provider "kubernetes" {
   cluster_ca_certificate = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)}"
 }
 
+resource "kubernetes_cluster_role_binding" "kubernetes-dashboard-rule" {
+  metadata {
+    name = "kubernetes-dashboard-rule"
+  }
+
+  role_ref {
+    kind = "ClusterRole"
+    name = "cluster-admin"
+    api_group = "rbac.authorization.k8s.io"
+  }
+
+  subject {
+    kind = "ServiceAccount"
+    namespace = "kube-system"
+    name = "kubernetes-dashboard"
+    api_group = ""
+  }
+}
+
 /*
 ToDo: Replace it with tillerless Helm v3 
 */
