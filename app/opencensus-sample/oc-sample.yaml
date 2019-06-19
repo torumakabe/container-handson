@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: front
+  name: front
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: front
+  template:
+    metadata:
+      labels:
+        app: front
+      name: front
+    spec:
+      containers:
+      - name: oc-go-app
+        image: torumakabe/oc-go-app:0.1.0
+        ports:
+        - containerPort: 50030
+        env:
+        - name: SERVICE_NAME
+          value: "front"
+        - name: OCAGENT_TRACE_EXPORTER_ENDPOINT
+          value: "localhost:55678"
+        - name: TARGET_SERVICE
+          value: "back"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 50030
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: 50030
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      - name: oc-local-forwarder
+        image: torumakabe/oc-local-forwarder:0.0.1
+        ports:
+        - containerPort: 55678
+        env:
+        - name: APPINSIGHTS_INSTRUMENTATIONKEY
+          value: "your-instrumentation-key"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: front
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    targetPort: 50030
+  selector:
+    app: front
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: back
+  name: back
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: back
+  template:
+    metadata:
+      labels:
+        app: back
+      name: back
+    spec:
+      containers:
+      - name: oc-go-app
+        image: torumakabe/oc-go-app:0.1.0
+        ports:
+        - containerPort: 50030
+        env:
+        - name: SERVICE_NAME
+          value: "back"
+        - name: OCAGENT_TRACE_EXPORTER_ENDPOINT
+          value: "localhost:55678"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 50030
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: 50030
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      - name: oc-local-forwarder
+        image: torumakabe/oc-local-forwarder:0.0.1
+        ports:
+        - containerPort: 55678
+        env:
+        - name: APPINSIGHTS_INSTRUMENTATIONKEY
+          value: "your-instrumentation-key"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: back
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    targetPort: 50030
+  selector:
+    app: back
+  type: ClusterIP

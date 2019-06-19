@@ -161,15 +161,47 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
   }
 }
 
+resource "azurerm_monitor_action_group" "critical" {
+  name = "critical"
+  resource_group_name = var.aks_cluster_rg
+  short_name = "critical"
+
+  email_receiver {
+    name = "admin"
+    email_address = var.admin_email_address
+  }
+}
+
+resource "azurerm_monitor_metric_alert" "failed_pods" {
+  name = "failed_pods_${azurerm_kubernetes_cluster.aks.name}"
+  resource_group_name = var.aks_cluster_rg
+  scopes = ["${azurerm_kubernetes_cluster.aks.id}"]
+  description = "Action will be triggered when failed pods count is greater than 0."
+
+  criteria {
+    metric_namespace = "Microsoft.ContainerService/managedClusters"
+    metric_name = "kube_pod_status_phase"
+    aggregation = "Total"
+    operator = "GreaterThan"
+    threshold = 0
+
+    dimension {
+      name = "phase"
+      operator = "Include"
+      values = ["Failed"]
+    }
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.critical.id
+  }
+}
+
 resource "azurerm_application_insights" "sampleapp" {
   name = "aks-sampleapp"
   location = var.aks_cluster_location
   resource_group_name = var.aks_cluster_rg
   application_type = "other"
-}
-
-output "instrumentation_key" {
-  value = "${azurerm_application_insights.sampleapp.instrumentation_key}"
 }
 
 provider "kubernetes" {
@@ -376,7 +408,7 @@ EOT
 }
 
 provider "helm" {
-  version = "~>0.9"
+  version = "~>0.10"
 
   kubernetes {
     host                   = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
@@ -428,5 +460,212 @@ resource "helm_release" "grafana" {
     set {
     name  = "persistence.size"
     value = "10Gi"
+  }
+}
+
+resource "kubernetes_service" "sampleapp_front" {
+  depends_on = ["azurerm_application_insights.sampleapp"]
+
+  metadata {
+    name = "front"
+  }
+
+  spec {
+    selector = {
+      app = "front"
+    }
+
+    port {
+      port        = 80
+      target_port = 50030
+    }
+
+    type = "LoadBalancer"
+  }
+}
+
+resource "kubernetes_deployment" "sampleapp_front" {
+  metadata {
+    name = "front"
+  }
+
+  spec {
+    replicas = 1
+
+    selector {
+      match_labels = {
+        app = "front"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          app = "front"
+        }
+      }
+
+      spec {
+        container {
+          image = "torumakabe/oc-go-app:0.1.0"
+          name  = "oc-go-app"
+
+          port {
+            container_port = 50030
+          }
+
+          env {
+            name  = "SERVICE_NAME"
+            value = "front"
+          }
+
+          env {
+            name  = "OCAGENT_TRACE_EXPORTER_ENDPOINT"
+            value = "localhost:55678"
+          }
+
+          env {
+            name  = "TARGET_SERVICE"
+            value = "back"
+          }
+
+          liveness_probe {
+            http_get {
+              path = "/healthz"
+              port = 50030
+            }
+
+            initial_delay_seconds = 3
+            period_seconds        = 3
+          }
+
+          readiness_probe {
+            http_get {
+              path = "/readiness"
+              port = 50030
+            }
+
+            initial_delay_seconds = 5
+            period_seconds        = 5
+          }
+
+        }
+
+        container {
+          image = "torumakabe/oc-local-forwarder:0.0.1"
+          name  = "oc-local-forwarder"
+
+          port {
+            container_port = 55678
+          }
+
+          env {
+            name  = "APPINSIGHTS_INSTRUMENTATIONKEY"
+            value = azurerm_application_insights.sampleapp.instrumentation_key
+          }
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_service" "sampleapp_back" {
+  depends_on = ["azurerm_application_insights.sampleapp"]
+
+  metadata {
+    name = "back"
+  }
+
+  spec {
+    selector = {
+      app = "back"
+    }
+
+    port {
+      port        = 80
+      target_port = 50030
+    }
+
+    type = "ClusterIP"
+  }
+}
+
+resource "kubernetes_deployment" "sampleapp_back" {
+  metadata {
+    name = "back"
+  }
+
+  spec {
+    replicas = 1
+
+    selector {
+      match_labels = {
+        app = "back"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          app = "back"
+        }
+      }
+
+      spec {
+        container {
+          image = "torumakabe/oc-go-app:0.1.0"
+          name  = "oc-go-app"
+
+          port {
+            container_port = 50030
+          }
+
+          env {
+            name  = "SERVICE_NAME"
+            value = "back"
+          }
+
+          env {
+            name  = "OCAGENT_TRACE_EXPORTER_ENDPOINT"
+            value = "localhost:55678"
+          }
+
+          liveness_probe {
+            http_get {
+              path = "/healthz"
+              port = 50030
+            }
+
+            initial_delay_seconds = 3
+            period_seconds        = 3
+          }
+
+          readiness_probe {
+            http_get {
+              path = "/readiness"
+              port = 50030
+            }
+
+            initial_delay_seconds = 5
+            period_seconds        = 5
+          }
+
+        }
+
+        container {
+          image = "torumakabe/oc-local-forwarder:0.0.1"
+          name  = "oc-local-forwarder"
+
+          port {
+            container_port = 55678
+          }
+
+          env {
+            name  = "APPINSIGHTS_INSTRUMENTATIONKEY"
+            value = azurerm_application_insights.sampleapp.instrumentation_key
+          }
+        }
+      }
+    }
   }
 }
