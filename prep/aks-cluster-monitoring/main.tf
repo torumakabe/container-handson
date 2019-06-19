@@ -421,11 +421,6 @@ resource "helm_release" "grafana" {
   }
 
     set {
-    name  = "persistence.enabled"
-    value = true
-  }
-
-    set {
     name  = "persistence.accessModes"
     value = "{ReadWriteOnce}"
   }
