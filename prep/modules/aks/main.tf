@@ -132,9 +132,6 @@ resource "kubernetes_service_account" "tiller" {
     name = "tiller"
     namespace = "kube-system"
   }
-  /*
-  automount_service_account_token = true
-*/
 }
 
 /*
