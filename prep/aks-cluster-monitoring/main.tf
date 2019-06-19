@@ -204,13 +204,36 @@ resource "azurerm_application_insights" "sampleapp" {
   application_type = "other"
 }
 
+resource "random_uuid" "webtest_id" {}
+resource "random_uuid" "webtest_guid" {}
+
+resource "azurerm_application_insights_web_test" "sampleapp" {
+  name = "aks-sampleapp-webtest"
+  location = var.aks_cluster_location
+  resource_group_name = var.aks_cluster_rg
+  application_insights_id = "${azurerm_application_insights.sampleapp.id}"
+  kind = "ping"
+  frequency = 300
+  timeout = 60
+  enabled = true
+  geo_locations = ["apac-jp-kaw-edge"]
+
+  configuration = <<XML
+<WebTest  Name="WebTest"  Id="${random_uuid.webtest_id.result}"  Enabled="True"  CssProjectStructure=""  CssIteration="" Timeout="120" WorkItemIds=""  xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010" Description=""  CredentialUserName="" CredentialPassword="" PreAuthenticate="True"  Proxy="default" StopOnError="False" RecordedResultFile="" ResultsLocale="">
+  <Items>
+    <Request  Method="GET"  Guid="${random_uuid.webtest_guid.result}" Version="1.1" Url="http://${kubernetes_service.sampleapp_front.load_balancer_ingress.0.ip}" ThinkTime="0" Timeout="120" ParseDependentRequests="False"  FollowRedirects="True"  RecordResult="True" Cache="False" ResponseTimeGoal="0"  Encoding="utf-8"  ExpectedHttpStatusCode="200"  ExpectedResponseUrl=""  ReportingName=""  IgnoreHttpStatusCode="False" />
+  </Items>
+</WebTest>
+XML
+}
+
 provider "kubernetes" {
   version = "~>1.7"
 
-  load_config_file = false
-  host = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
-  client_certificate = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)}"
-  client_key = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)}"
+  load_config_file       = false
+  host                   = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
+  client_certificate     = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)}"
+  client_key             = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)}"
   cluster_ca_certificate = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)}"
 }
 
@@ -220,15 +243,15 @@ resource "kubernetes_cluster_role_binding" "kubernetes-dashboard-rule" {
   }
 
   role_ref {
-    kind = "ClusterRole"
-    name = "cluster-admin"
+    kind      = "ClusterRole"
+    name      = "cluster-admin"
     api_group = "rbac.authorization.k8s.io"
   }
 
   subject {
-    kind = "ServiceAccount"
+    kind      = "ServiceAccount"
     namespace = "kube-system"
-    name = "kubernetes-dashboard"
+    name      = "kubernetes-dashboard"
     api_group = ""
   }
 }
@@ -240,8 +263,8 @@ resource "kubernetes_cluster_role" "log_reader" {
 
   rule {
     api_groups = [""]
-    resources = ["pods/log", "events"]
-    verbs = ["get", "list"]
+    resources  = ["pods/log", "events"]
+    verbs      = ["get", "list"]
   }
 }
 
@@ -251,14 +274,14 @@ resource "kubernetes_cluster_role_binding" "log_reader" {
   }
 
   role_ref {
-    kind = "ClusterRole"
-    name = "containerhealth-log-reader"
+    kind      = "ClusterRole"
+    name      = "containerhealth-log-reader"
     api_group = "rbac.authorization.k8s.io"
   }
 
   subject {
-    kind = "User"
-    name = "clusterUser"
+    kind      = "User"
+    name      = "clusterUser"
     api_group = "rbac.authorization.k8s.io"
   }
 }
@@ -268,7 +291,7 @@ ToDo: Replace it with tillerless Helm v3
 */
 resource "kubernetes_service_account" "tiller" {
   metadata {
-    name = "tiller"
+    name      = "tiller"
     namespace = "kube-system"
   }
 }
@@ -283,13 +306,13 @@ resource "kubernetes_cluster_role_binding" "tiller" {
 
   role_ref {
     api_group = "rbac.authorization.k8s.io"
-    kind = "ClusterRole"
-    name = "cluster-admin"
+    kind      = "ClusterRole"
+    name      = "cluster-admin"
   }
 
   subject {
-    kind = "ServiceAccount"
-    name = kubernetes_service_account.tiller.metadata[0].name
+    kind      = "ServiceAccount"
+    name      = kubernetes_service_account.tiller.metadata[0].name
     namespace = "kube-system"
   }
 }
@@ -299,12 +322,12 @@ ToDo: Replace it with tillerless Helm v3
 */
 resource "kubernetes_deployment" "tiller" {
   metadata {
-    name = "tiller-deploy"
+    name      = "tiller-deploy"
     namespace = kubernetes_service_account.tiller.metadata[0].namespace
 
     labels = {
       name = "tiller"
-      app = "helm"
+      app  = "helm"
     }
   }
 
@@ -314,7 +337,7 @@ resource "kubernetes_deployment" "tiller" {
     selector {
       match_labels = {
         name = "tiller"
-        app = "helm"
+        app  = "helm"
       }
     }
 
@@ -322,25 +345,25 @@ resource "kubernetes_deployment" "tiller" {
       metadata {
         labels = {
           name = "tiller"
-          app = "helm"
+          app  = "helm"
         }
       }
 
       spec {
         container {
-          image = var.tiller_image
-          name = "tiller"
+          image             = var.tiller_image
+          name              = "tiller"
           image_pull_policy = "IfNotPresent"
-          command = ["/tiller"]
-          args = ["--listen=localhost:44134"]
+          command           = ["/tiller"]
+          args              = ["--listen=localhost:44134"]
 
           env {
-            name = "TILLER_NAMESPACE"
+            name  = "TILLER_NAMESPACE"
             value = kubernetes_service_account.tiller.metadata[0].namespace
           }
 
           env {
-            name = "TILLER_HISTORY_MAX"
+            name  = "TILLER_HISTORY_MAX"
             value = "0"
           }
 
@@ -351,7 +374,7 @@ resource "kubernetes_deployment" "tiller" {
             }
 
             initial_delay_seconds = "1"
-            timeout_seconds = "1"
+            timeout_seconds       = "1"
           }
 
           readiness_probe {
@@ -361,13 +384,13 @@ resource "kubernetes_deployment" "tiller" {
             }
 
             initial_delay_seconds = "1"
-            timeout_seconds = "1"
+            timeout_seconds       = "1"
           }
 
           volume_mount {
             mount_path = "/var/run/secrets/kubernetes.io/serviceaccount"
-            name = kubernetes_service_account.tiller.default_secret_name
-            read_only = true
+            name       = kubernetes_service_account.tiller.default_secret_name
+            read_only  = true
           }
         }
 
@@ -397,12 +420,11 @@ resource "null_resource" "tiller_wait" {
       helm init --client-only
       kubectl rollout status deployment/$${TILLER_DEPLOYMENT_NAME} -n $${TILLER_NAMESPACE}
     
-EOT
-
+    EOT
 
     environment = {
       TILLER_DEPLOYMENT_NAME = kubernetes_deployment.tiller.metadata[0].name
-      TILLER_NAMESPACE       = kubernetes_deployment.tiller.metadata[0].namespace
+      TILLER_NAMESPACE = kubernetes_deployment.tiller.metadata[0].namespace
     }
   }
 }
@@ -411,56 +433,60 @@ provider "helm" {
   version = "~>0.10"
 
   kubernetes {
-    host                   = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
-    client_certificate     = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)}"
-    client_key             = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)}"
+    host = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
+    client_certificate = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)}"
+    client_key = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)}"
     cluster_ca_certificate = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)}"
   }
 
-  install_tiller  = false
-  namespace       = "kube-system"
+  install_tiller = false
+  namespace = "kube-system"
   service_account = "tiller"
 }
 
 data "helm_repository" "default" {
   name = "default"
-  url  = "https://kubernetes-charts-incubator.storage.googleapis.com/"
+  url = "https://kubernetes-charts-incubator.storage.googleapis.com/"
 }
 
 resource "helm_release" "prometheus" {
   depends_on = ["null_resource.tiller_wait"]
-  name       = "prometheus"
-  namespace  = "monitoring"
+  name = "prometheus"
+  namespace = "monitoring"
   repository = data.helm_repository.default.metadata[0].name
-  chart      = "stable/prometheus"
+  chart = "stable/prometheus"
 
   set {
-    name  = "rbac.create"
+    name = "rbac.create"
     value = true
   }
 }
 
 resource "helm_release" "grafana" {
   depends_on = ["null_resource.tiller_wait"]
-  name       = "grafana"
-  namespace  = "monitoring"
+  name = "grafana"
+  namespace = "monitoring"
   repository = data.helm_repository.default.metadata[0].name
-  chart      = "stable/grafana"
+  chart = "stable/grafana"
 
-  set {
-    name  = "persistence.enabled"
-    value = true
-  }
-
-    set {
-    name  = "persistence.accessModes"
-    value = "{ReadWriteOnce}"
-  }
-
-    set {
-    name  = "persistence.size"
-    value = "10Gi"
-  }
+  values = [
+    <<EOT
+    datasources:
+      datasources.yaml:
+        apiVersion: 1
+        datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://prometheus-server
+          access: proxy
+          isDefault: true
+    persistence:
+      enabled: true
+      accessModes:
+        - ReadWriteOnce
+      size: 10Gi
+    EOT
+]
 }
 
 resource "kubernetes_service" "sampleapp_front" {
