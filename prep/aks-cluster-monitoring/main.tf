@@ -41,7 +41,7 @@ resource "azuread_service_principal" "aks" {
   application_id = "${azuread_application.aks.application_id}"
 }
 
-resource "random_string" "password" {
+resource "random_string" "aks_password" {
   length  = 32
   special = true
 }
@@ -49,7 +49,7 @@ resource "random_string" "password" {
 resource "azuread_service_principal_password" "aks" {
   end_date             = "2299-12-30T23:00:00Z" # Forever
   service_principal_id = azuread_service_principal.aks.id
-  value                = random_string.password.result
+  value                = random_string.aks_password.result
 }
 
 resource "azurerm_role_assignment" "aks" {
@@ -84,7 +84,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
   service_principal {
     client_id     = azuread_application.aks.application_id
-    client_secret = random_string.password.result
+    client_secret = random_string.aks_password.result
   }
 
   role_based_access_control {
@@ -172,23 +172,25 @@ resource "azurerm_monitor_action_group" "critical" {
   }
 }
 
-resource "azurerm_monitor_metric_alert" "failed_pods" {
-  name = "failed-pods-${azurerm_kubernetes_cluster.aks.name}"
+resource "azurerm_monitor_metric_alert" "not_ready_nodes" {
+  name = "aks-not-ready-nodes"
   resource_group_name = var.aks_cluster_rg
   scopes = ["${azurerm_kubernetes_cluster.aks.id}"]
-  description = "Action will be triggered when failed pods count is greater than 0."
+  description = "Action will be triggered when not ready nodes count is greater than 0."
 
   criteria {
     metric_namespace = "Microsoft.ContainerService/managedClusters"
-    metric_name = "kube_pod_status_phase"
+    metric_name = "kube_node_status_condition"
+    frequency = "PT1M"
+    window_size = "PT1M"
     aggregation = "Total"
     operator = "GreaterThan"
     threshold = 0
 
     dimension {
-      name = "phase"
+      name = "status2"
       operator = "Include"
-      values = ["Failed"]
+      values = ["*"]
     }
   }
 
@@ -449,45 +451,71 @@ data "helm_repository" "default" {
   url = "https://kubernetes-charts-incubator.storage.googleapis.com/"
 }
 
-resource "helm_release" "prometheus" {
-  depends_on = ["null_resource.tiller_wait"]
-  name = "prometheus"
-  namespace = "monitoring"
-  repository = data.helm_repository.default.metadata[0].name
-  chart = "stable/prometheus"
-
-  set {
-    name = "rbac.create"
-    value = true
-  }
+resource "random_string" "grafana_password" {
+  length = 32
+  special = true
 }
 
-resource "helm_release" "grafana" {
+resource "helm_release" "prometheus_operator" {
   depends_on = ["null_resource.tiller_wait"]
-  name = "grafana"
+  name = "prometheus-operator"
   namespace = "monitoring"
   repository = data.helm_repository.default.metadata[0].name
-  chart = "stable/grafana"
+  chart = "stable/prometheus-operator"
+  timeout = 1000
 
-  values = [
-    <<EOT
-    datasources:
-      datasources.yaml:
-        apiVersion: 1
-        datasources:
-        - name: Prometheus
-          type: prometheus
-          url: http://prometheus-server
-          access: proxy
-          isDefault: true
-    persistence:
-      enabled: true
-      accessModes:
-        - ReadWriteOnce
-      size: 10Gi
-    EOT
+  values = [<<EOT
+prometheus:
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          storageClassName: managed-premium
+          resources:
+            requests:
+              storage: 5Gi
+
+grafana:
+  adminPassword: "${random_string.grafana_password.result}"
+  persistence:
+    enabled: true
+    storageClassName: managed-premium
+    accessModes: ["ReadWriteOnce"]
+    size: 5Gi
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          storageClassName: managed-premium
+          resources:
+            requests:
+              storage: 5Gi
+
+prometheus-node-exporter:
+  service:
+    port: 30206
+    targetPort: 30206
+
+kubeEtcd:
+  enabled: false
+
+kubeControllerManager:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+EOT
 ]
 }
+
+output "grafana_password" {
+  value = random_string.grafana_password.result
+}
+
 
 resource "kubernetes_service" "sampleapp_front" {
   depends_on = ["azurerm_application_insights.sampleapp"]
