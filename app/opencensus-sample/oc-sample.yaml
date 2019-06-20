@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: oc-go-app
-        image: torumakabe/oc-go-app:0.1.0
+        image: torumakabe/oc-go-app:0.1.1
         ports:
         - containerPort: 50030
         env:
@@ -81,7 +81,7 @@ spec:
     spec:
       containers:
       - name: oc-go-app
-        image: torumakabe/oc-go-app:0.1.0
+        image: torumakabe/oc-go-app:0.1.1
         ports:
         - containerPort: 50030
         env:

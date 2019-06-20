@@ -60,7 +60,7 @@ resource "azurerm_role_assignment" "aks" {
 
   // Waiting for AAD global replication
   provisioner "local-exec" {
-    command = "sleep 30"
+    command = "sleep 45"
   }
 }
 
@@ -173,7 +173,7 @@ resource "azurerm_monitor_action_group" "critical" {
 }
 
 resource "azurerm_monitor_metric_alert" "failed_pods" {
-  name = "failed_pods_${azurerm_kubernetes_cluster.aks.name}"
+  name = "failed-pods-${azurerm_kubernetes_cluster.aks.name}"
   resource_group_name = var.aks_cluster_rg
   scopes = ["${azurerm_kubernetes_cluster.aks.id}"]
   description = "Action will be triggered when failed pods count is greater than 0."
@@ -205,7 +205,7 @@ resource "azurerm_application_insights" "sampleapp" {
 }
 
 resource "random_uuid" "webtest_id" {}
-resource "random_uuid" "webtest_guid" {}
+resource "random_uuid" "webtest_req_guid" {}
 
 resource "azurerm_application_insights_web_test" "sampleapp" {
   name = "aks-sampleapp-webtest"
@@ -216,12 +216,12 @@ resource "azurerm_application_insights_web_test" "sampleapp" {
   frequency = 300
   timeout = 60
   enabled = true
-  geo_locations = ["apac-jp-kaw-edge"]
+  geo_locations = ["apac-jp-kaw-edge", "apac-hk-hkn-azr", "apac-sg-sin-azr"]
 
   configuration = <<XML
 <WebTest  Name="WebTest"  Id="${random_uuid.webtest_id.result}"  Enabled="True"  CssProjectStructure=""  CssIteration="" Timeout="120" WorkItemIds=""  xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010" Description=""  CredentialUserName="" CredentialPassword="" PreAuthenticate="True"  Proxy="default" StopOnError="False" RecordedResultFile="" ResultsLocale="">
   <Items>
-    <Request  Method="GET"  Guid="${random_uuid.webtest_guid.result}" Version="1.1" Url="http://${kubernetes_service.sampleapp_front.load_balancer_ingress.0.ip}" ThinkTime="0" Timeout="120" ParseDependentRequests="False"  FollowRedirects="True"  RecordResult="True" Cache="False" ResponseTimeGoal="0"  Encoding="utf-8"  ExpectedHttpStatusCode="200"  ExpectedResponseUrl=""  ReportingName=""  IgnoreHttpStatusCode="False" />
+    <Request  Method="GET"  Guid="${random_uuid.webtest_req_guid.result}" Version="1.1" Url="http://${kubernetes_service.sampleapp_front.load_balancer_ingress.0.ip}" ThinkTime="0" Timeout="120" ParseDependentRequests="False"  FollowRedirects="True"  RecordResult="True" Cache="False" ResponseTimeGoal="0"  Encoding="utf-8"  ExpectedHttpStatusCode="200"  ExpectedResponseUrl=""  ReportingName=""  IgnoreHttpStatusCode="False" />
   </Items>
 </WebTest>
 XML
@@ -533,7 +533,7 @@ resource "kubernetes_deployment" "sampleapp_front" {
 
       spec {
         container {
-          image = "torumakabe/oc-go-app:0.1.0"
+          image = "torumakabe/oc-go-app:0.1.1"
           name  = "oc-go-app"
 
           port {
@@ -639,7 +639,7 @@ resource "kubernetes_deployment" "sampleapp_back" {
 
       spec {
         container {
-          image = "torumakabe/oc-go-app:0.1.0"
+          image = "torumakabe/oc-go-app:0.1.1"
           name  = "oc-go-app"
 
           port {

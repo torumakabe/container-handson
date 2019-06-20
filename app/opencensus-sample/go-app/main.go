@@ -14,7 +14,7 @@ import (
 
 func getTargetServiceURI() string {
 	targetService := os.Getenv("TARGET_SERVICE")
-	targetServiceURI := "http://blank.org"
+	targetServiceURI := ""
 
 	if len(targetService) != 0 {
 		targetServiceURI = fmt.Sprintf("http://%v", targetService)
@@ -49,17 +49,20 @@ func main() {
 		fmt.Fprintf(w, "hello world from %s", serviceName)
 
 		targetServiceURI := getTargetServiceURI()
-		r, _ := http.NewRequest("GET", targetServiceURI, nil)
+		if len(targetServiceURI) != 0 {
+			r, _ := http.NewRequest("GET", targetServiceURI, nil)
 
-		// Propagate the trace header info in the outgoing requests.
-		r = r.WithContext(req.Context())
-		resp, err := client.Do(r)
-		if err != nil {
-			log.Println(err)
-		} else {
-			// TODO: handle response
-			resp.Body.Close()
+			// Propagate the trace header info in the outgoing requests.
+			r = r.WithContext(req.Context())
+			resp, err := client.Do(r)
+			if err != nil {
+				log.Println(err)
+			} else {
+				// TODO: handle response
+				resp.Body.Close()
+			}
 		}
+
 	})
 
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, req *http.Request) {
@@ -68,9 +71,13 @@ func main() {
 
 	http.HandleFunc("/readiness", func(w http.ResponseWriter, req *http.Request) {
 		targetServiceURI := getTargetServiceURI()
-		_, err := http.NewRequest("GET", targetServiceURI, nil)
-		if err != nil {
-			http.Error(w, "A dependent service is not ready", http.StatusServiceUnavailable)
+		if len(targetServiceURI) != 0 {
+			_, err := http.NewRequest("GET", targetServiceURI, nil)
+			if err != nil {
+				http.Error(w, "A dependent service is not ready", http.StatusServiceUnavailable)
+			} else {
+				w.Write([]byte("ok"))
+			}
 		} else {
 			w.Write([]byte("ok"))
 		}
