@@ -584,7 +584,7 @@ resource "kubernetes_deployment" "sampleapp_front" {
 
       spec {
         container {
-          image = "torumakabe/oc-go-app:0.1.7"
+          image = "torumakabe/oc-go-app:0.1.9"
           name = "oc-go-app"
 
           port {
@@ -612,17 +612,17 @@ resource "kubernetes_deployment" "sampleapp_front" {
               port = 50030
             }
 
-            initial_delay_seconds = 3
+            initial_delay_seconds = 10
             period_seconds = 3
           }
 
           readiness_probe {
             http_get {
-              path = "/readiness"
+              path = "/healthz"
               port = 50030
             }
 
-            initial_delay_seconds = 5
+            initial_delay_seconds = 10
             period_seconds = 5
           }
 
@@ -688,7 +688,7 @@ resource "kubernetes_deployment" "sampleapp_back" {
 
       spec {
         container {
-          image = "torumakabe/oc-go-app:0.1.7"
+          image = "torumakabe/oc-go-app:0.1.9"
           name = "oc-go-app"
 
           port {
@@ -711,17 +711,17 @@ resource "kubernetes_deployment" "sampleapp_back" {
               port = 50030
             }
 
-            initial_delay_seconds = 3
+            initial_delay_seconds = 10
             period_seconds = 3
           }
 
           readiness_probe {
             http_get {
-              path = "/readiness"
+              path = "/healthz"
               port = 50030
             }
 
-            initial_delay_seconds = 5
+            initial_delay_seconds = 10
             period_seconds = 5
           }
 

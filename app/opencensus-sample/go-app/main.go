@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"bytes"
+	"context"
+	"encoding/binary"
+	"time"
 	os "os"
 
 	ocagent "contrib.go.opencensus.io/exporter/ocagent"
@@ -12,15 +16,25 @@ import (
 	"go.opencensus.io/trace"
 )
 
-func getTargetServiceURI() string {
-	targetService := os.Getenv("TARGET_SERVICE")
-	targetServiceURI := ""
+func doWork(ctx context.Context) {
+	_, span := trace.StartSpan(ctx, "doWork")
+	defer span.End()
 
-	if len(targetService) != 0 {
-		targetServiceURI = fmt.Sprintf("http://%v", targetService)
+	fmt.Println("doing busy work")
+	time.Sleep(80 * time.Millisecond)
+	buf := bytes.NewBuffer([]byte{0xFF, 0x00, 0x00, 0x00})
+	num, err := binary.ReadVarint(buf)
+	if err != nil {
+		span.SetStatus(trace.Status{
+			Code:    trace.StatusCodeUnknown,
+			Message: err.Error(),
+		})
 	}
 
-	return targetServiceURI
+	span.Annotate([]trace.Attribute{
+		trace.Int64Attribute("bytes to int", num),
+	}, "Invoking doWork")
+	time.Sleep(20 * time.Millisecond)
 }
 
 func main() {
@@ -47,14 +61,24 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "hello world from %s", serviceName)
 
-		targetServiceURI := getTargetServiceURI()
-		if len(targetServiceURI) != 0 {
+		ctx, span := trace.StartSpan(req.Context(), "main")
+		defer span.End()
+	
+		for i := 0; i < 3; i++ {
+			doWork(ctx)
+		}
+
+		targetService := os.Getenv("TARGET_SERVICE")
+		if len(targetService) != 0 {
+			targetServiceURI := fmt.Sprintf("http://%v", targetService)
+			/*
 			httpFormat := &tracecontext.HTTPFormat{}
 			sc, ok := httpFormat.SpanContextFromRequest(req)
 			if ok {
 				_, span := trace.StartSpanWithRemoteParent(req.Context(), serviceName, sc)
 				defer span.End()
 			}
+			*/
 
 			r, _ := http.NewRequest("GET", targetServiceURI, nil)
 
@@ -73,20 +97,6 @@ func main() {
 
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte("ok"))
-	})
-
-	http.HandleFunc("/readiness", func(w http.ResponseWriter, req *http.Request) {
-		targetServiceURI := getTargetServiceURI()
-		if len(targetServiceURI) != 0 {
-			_, err := http.NewRequest("GET", targetServiceURI, nil)
-			if err != nil {
-				http.Error(w, "A dependent service is not ready", http.StatusServiceUnavailable)
-			} else {
-				w.Write([]byte("ok"))
-			}
-		} else {
-			w.Write([]byte("ok"))
-		}
 	})
 
 	log.Println("We will listen :50030")
