@@ -1,3 +1,7 @@
+terraform {
+  required_version = ">= 0.12"
+}
+
 provider "azurerm" {
   version = "~>1.30"
 }
@@ -172,17 +176,18 @@ resource "azurerm_monitor_action_group" "critical" {
   }
 }
 
-resource "azurerm_monitor_metric_alert" "not_ready_nodes" {
-  name = "aks-not-ready-nodes"
+resource "azurerm_monitor_metric_alert" "unhealthy_nodes" {
+  name = "aks-unhealthy-nodes"
   resource_group_name = var.aks_cluster_rg
   scopes = ["${azurerm_kubernetes_cluster.aks.id}"]
-  description = "Action will be triggered when not ready nodes count is greater than 0."
+  frequency = "PT1M"
+  window_size = "PT5M"
+  severity = 3
+  description = "Action will be triggered when not ready or unknown nodes count is greater than 0."
 
   criteria {
     metric_namespace = "Microsoft.ContainerService/managedClusters"
     metric_name = "kube_node_status_condition"
-    frequency = "PT1M"
-    window_size = "PT1M"
     aggregation = "Total"
     operator = "GreaterThan"
     threshold = 0
@@ -190,7 +195,7 @@ resource "azurerm_monitor_metric_alert" "not_ready_nodes" {
     dimension {
       name = "status2"
       operator = "Include"
-      values = ["*"]
+      values = ["NotReady", "Unknown"]
     }
   }
 
@@ -206,6 +211,8 @@ resource "azurerm_application_insights" "sampleapp" {
   application_type = "other"
 }
 
+
+/* Waiting for improvement in Terraform provider for Azure Monitor unified alert
 resource "random_uuid" "webtest_id" {}
 resource "random_uuid" "webtest_req_guid" {}
 
@@ -228,14 +235,15 @@ resource "azurerm_application_insights_web_test" "sampleapp" {
 </WebTest>
 XML
 }
+*/
 
 provider "kubernetes" {
   version = "~>1.7"
 
-  load_config_file       = false
-  host                   = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
-  client_certificate     = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)}"
-  client_key             = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)}"
+  load_config_file = false
+  host = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
+  client_certificate = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)}"
+  client_key = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)}"
   cluster_ca_certificate = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)}"
 }
 
@@ -245,15 +253,15 @@ resource "kubernetes_cluster_role_binding" "kubernetes-dashboard-rule" {
   }
 
   role_ref {
-    kind      = "ClusterRole"
-    name      = "cluster-admin"
+    kind = "ClusterRole"
+    name = "cluster-admin"
     api_group = "rbac.authorization.k8s.io"
   }
 
   subject {
-    kind      = "ServiceAccount"
+    kind = "ServiceAccount"
     namespace = "kube-system"
-    name      = "kubernetes-dashboard"
+    name = "kubernetes-dashboard"
     api_group = ""
   }
 }
@@ -265,8 +273,8 @@ resource "kubernetes_cluster_role" "log_reader" {
 
   rule {
     api_groups = [""]
-    resources  = ["pods/log", "events"]
-    verbs      = ["get", "list"]
+    resources = ["pods/log", "events"]
+    verbs = ["get", "list"]
   }
 }
 
@@ -276,14 +284,14 @@ resource "kubernetes_cluster_role_binding" "log_reader" {
   }
 
   role_ref {
-    kind      = "ClusterRole"
-    name      = "containerhealth-log-reader"
+    kind = "ClusterRole"
+    name = "containerhealth-log-reader"
     api_group = "rbac.authorization.k8s.io"
   }
 
   subject {
-    kind      = "User"
-    name      = "clusterUser"
+    kind = "User"
+    name = "clusterUser"
     api_group = "rbac.authorization.k8s.io"
   }
 }
@@ -293,7 +301,7 @@ ToDo: Replace it with tillerless Helm v3
 */
 resource "kubernetes_service_account" "tiller" {
   metadata {
-    name      = "tiller"
+    name = "tiller"
     namespace = "kube-system"
   }
 }
@@ -308,13 +316,13 @@ resource "kubernetes_cluster_role_binding" "tiller" {
 
   role_ref {
     api_group = "rbac.authorization.k8s.io"
-    kind      = "ClusterRole"
-    name      = "cluster-admin"
+    kind = "ClusterRole"
+    name = "cluster-admin"
   }
 
   subject {
-    kind      = "ServiceAccount"
-    name      = kubernetes_service_account.tiller.metadata[0].name
+    kind = "ServiceAccount"
+    name = kubernetes_service_account.tiller.metadata[0].name
     namespace = "kube-system"
   }
 }
@@ -324,12 +332,12 @@ ToDo: Replace it with tillerless Helm v3
 */
 resource "kubernetes_deployment" "tiller" {
   metadata {
-    name      = "tiller-deploy"
+    name = "tiller-deploy"
     namespace = kubernetes_service_account.tiller.metadata[0].namespace
 
     labels = {
       name = "tiller"
-      app  = "helm"
+      app = "helm"
     }
   }
 
@@ -339,7 +347,7 @@ resource "kubernetes_deployment" "tiller" {
     selector {
       match_labels = {
         name = "tiller"
-        app  = "helm"
+        app = "helm"
       }
     }
 
@@ -347,25 +355,25 @@ resource "kubernetes_deployment" "tiller" {
       metadata {
         labels = {
           name = "tiller"
-          app  = "helm"
+          app = "helm"
         }
       }
 
       spec {
         container {
-          image             = var.tiller_image
-          name              = "tiller"
+          image = var.tiller_image
+          name = "tiller"
           image_pull_policy = "IfNotPresent"
-          command           = ["/tiller"]
-          args              = ["--listen=localhost:44134"]
+          command = ["/tiller"]
+          args = ["--listen=localhost:44134"]
 
           env {
-            name  = "TILLER_NAMESPACE"
+            name = "TILLER_NAMESPACE"
             value = kubernetes_service_account.tiller.metadata[0].namespace
           }
 
           env {
-            name  = "TILLER_HISTORY_MAX"
+            name = "TILLER_HISTORY_MAX"
             value = "0"
           }
 
@@ -376,7 +384,7 @@ resource "kubernetes_deployment" "tiller" {
             }
 
             initial_delay_seconds = "1"
-            timeout_seconds       = "1"
+            timeout_seconds = "1"
           }
 
           readiness_probe {
@@ -386,13 +394,13 @@ resource "kubernetes_deployment" "tiller" {
             }
 
             initial_delay_seconds = "1"
-            timeout_seconds       = "1"
+            timeout_seconds = "1"
           }
 
           volume_mount {
             mount_path = "/var/run/secrets/kubernetes.io/serviceaccount"
-            name       = kubernetes_service_account.tiller.default_secret_name
-            read_only  = true
+            name = kubernetes_service_account.tiller.default_secret_name
+            read_only = true
           }
         }
 
@@ -426,7 +434,7 @@ resource "null_resource" "tiller_wait" {
 
     environment = {
       TILLER_DEPLOYMENT_NAME = kubernetes_deployment.tiller.metadata[0].name
-      TILLER_NAMESPACE = kubernetes_deployment.tiller.metadata[0].namespace
+      TILLER_NAMESPACE       = kubernetes_deployment.tiller.metadata[0].namespace
     }
   }
 }
@@ -435,39 +443,50 @@ provider "helm" {
   version = "~>0.10"
 
   kubernetes {
-    host = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
-    client_certificate = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)}"
-    client_key = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)}"
+    host                   = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
+    client_certificate     = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)}"
+    client_key             = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)}"
     cluster_ca_certificate = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)}"
   }
 
-  install_tiller = false
-  namespace = "kube-system"
+  install_tiller  = false
+  namespace       = "kube-system"
   service_account = "tiller"
 }
 
 data "helm_repository" "default" {
   name = "default"
-  url = "https://kubernetes-charts-incubator.storage.googleapis.com/"
+  url  = "https://kubernetes-charts-incubator.storage.googleapis.com/"
 }
 
 resource "random_string" "grafana_password" {
-  length = 32
+  length  = 32
   special = true
 }
 
 resource "helm_release" "prometheus_operator" {
   depends_on = ["null_resource.tiller_wait"]
-  name = "prometheus-operator"
-  namespace = "monitoring"
+  name       = "prometheus-operator"
+  namespace  = "monitoring"
   repository = data.helm_repository.default.metadata[0].name
-  chart = "stable/prometheus-operator"
-  timeout = 1000
+  chart      = "stable/prometheus-operator"
+  timeout    = 1000
 
   values = [<<EOT
 prometheus:
   prometheusSpec:
     storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          storageClassName: managed-premium
+          resources:
+            requests:
+              storage: 5Gi
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
       volumeClaimTemplate:
         spec:
           accessModes: ["ReadWriteOnce"]
@@ -483,17 +502,23 @@ grafana:
     storageClassName: managed-premium
     accessModes: ["ReadWriteOnce"]
     size: 5Gi
-
-alertmanager:
-  alertmanagerSpec:
-    storage:
-      volumeClaimTemplate:
-        spec:
-          accessModes: ["ReadWriteOnce"]
-          storageClassName: managed-premium
-          resources:
-            requests:
-              storage: 5Gi
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'sample'
+        orgId: 1
+        folder: 'sample'
+        type: file
+        disableDeletion: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/sample
+  dashboards:
+    sample:
+      kubernetes-cluster:
+        gnetId: 6417
+        datasource: Prometheus
 
 prometheus-node-exporter:
   service:
@@ -509,7 +534,7 @@ kubeControllerManager:
 kubeScheduler:
   enabled: false
 EOT
-]
+  ]
 }
 
 output "grafana_password" {
@@ -518,8 +543,6 @@ output "grafana_password" {
 
 
 resource "kubernetes_service" "sampleapp_front" {
-  depends_on = ["azurerm_application_insights.sampleapp"]
-
   metadata {
     name = "front"
   }
@@ -530,7 +553,7 @@ resource "kubernetes_service" "sampleapp_front" {
     }
 
     port {
-      port        = 80
+      port = 80
       target_port = 50030
     }
 
@@ -561,25 +584,25 @@ resource "kubernetes_deployment" "sampleapp_front" {
 
       spec {
         container {
-          image = "torumakabe/oc-go-app:0.1.1"
-          name  = "oc-go-app"
+          image = "torumakabe/oc-go-app:0.1.7"
+          name = "oc-go-app"
 
           port {
             container_port = 50030
           }
 
           env {
-            name  = "SERVICE_NAME"
+            name = "SERVICE_NAME"
             value = "front"
           }
 
           env {
-            name  = "OCAGENT_TRACE_EXPORTER_ENDPOINT"
+            name = "OCAGENT_TRACE_EXPORTER_ENDPOINT"
             value = "localhost:55678"
           }
 
           env {
-            name  = "TARGET_SERVICE"
+            name = "TARGET_SERVICE"
             value = "back"
           }
 
@@ -590,7 +613,7 @@ resource "kubernetes_deployment" "sampleapp_front" {
             }
 
             initial_delay_seconds = 3
-            period_seconds        = 3
+            period_seconds = 3
           }
 
           readiness_probe {
@@ -600,21 +623,21 @@ resource "kubernetes_deployment" "sampleapp_front" {
             }
 
             initial_delay_seconds = 5
-            period_seconds        = 5
+            period_seconds = 5
           }
 
         }
 
         container {
           image = "torumakabe/oc-local-forwarder:0.0.1"
-          name  = "oc-local-forwarder"
+          name = "oc-local-forwarder"
 
           port {
             container_port = 55678
           }
 
           env {
-            name  = "APPINSIGHTS_INSTRUMENTATIONKEY"
+            name = "APPINSIGHTS_INSTRUMENTATIONKEY"
             value = azurerm_application_insights.sampleapp.instrumentation_key
           }
         }
@@ -624,8 +647,6 @@ resource "kubernetes_deployment" "sampleapp_front" {
 }
 
 resource "kubernetes_service" "sampleapp_back" {
-  depends_on = ["azurerm_application_insights.sampleapp"]
-
   metadata {
     name = "back"
   }
@@ -636,7 +657,7 @@ resource "kubernetes_service" "sampleapp_back" {
     }
 
     port {
-      port        = 80
+      port = 80
       target_port = 50030
     }
 
@@ -667,20 +688,20 @@ resource "kubernetes_deployment" "sampleapp_back" {
 
       spec {
         container {
-          image = "torumakabe/oc-go-app:0.1.1"
-          name  = "oc-go-app"
+          image = "torumakabe/oc-go-app:0.1.7"
+          name = "oc-go-app"
 
           port {
             container_port = 50030
           }
 
           env {
-            name  = "SERVICE_NAME"
+            name = "SERVICE_NAME"
             value = "back"
           }
 
           env {
-            name  = "OCAGENT_TRACE_EXPORTER_ENDPOINT"
+            name = "OCAGENT_TRACE_EXPORTER_ENDPOINT"
             value = "localhost:55678"
           }
 
@@ -691,7 +712,7 @@ resource "kubernetes_deployment" "sampleapp_back" {
             }
 
             initial_delay_seconds = 3
-            period_seconds        = 3
+            period_seconds = 3
           }
 
           readiness_probe {
@@ -701,21 +722,21 @@ resource "kubernetes_deployment" "sampleapp_back" {
             }
 
             initial_delay_seconds = 5
-            period_seconds        = 5
+            period_seconds = 5
           }
 
         }
 
         container {
           image = "torumakabe/oc-local-forwarder:0.0.1"
-          name  = "oc-local-forwarder"
+          name = "oc-local-forwarder"
 
           port {
             container_port = 55678
           }
 
           env {
-            name  = "APPINSIGHTS_INSTRUMENTATIONKEY"
+            name = "APPINSIGHTS_INSTRUMENTATIONKEY"
             value = azurerm_application_insights.sampleapp.instrumentation_key
           }
         }

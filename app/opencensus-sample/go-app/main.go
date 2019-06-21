@@ -40,7 +40,6 @@ func main() {
 	}
 
 	trace.RegisterExporter(exporter)
-
 	trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
 
 	client := &http.Client{Transport: &ochttp.Transport{Propagation: &tracecontext.HTTPFormat{}}}
@@ -50,6 +49,13 @@ func main() {
 
 		targetServiceURI := getTargetServiceURI()
 		if len(targetServiceURI) != 0 {
+			httpFormat := &tracecontext.HTTPFormat{}
+			sc, ok := httpFormat.SpanContextFromRequest(req)
+			if ok {
+				_, span := trace.StartSpanWithRemoteParent(req.Context(), serviceName, sc)
+				defer span.End()
+			}
+
 			r, _ := http.NewRequest("GET", targetServiceURI, nil)
 
 			// Propagate the trace header info in the outgoing requests.
