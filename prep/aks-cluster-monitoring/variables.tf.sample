@@ -10,14 +10,6 @@ variable "aks_cluster_location" {
   default = "japaneast"
 }
 
-variable "la_workspace_name" {
-  default = "your-log-analytics-workspace-name"
-}
-
-variable "la_workspace_rg" {
-  default = "your-log-analytics-workspace-resource-group-name"
-}
-
 variable "tiller_image" {
   default = "gcr.io/kubernetes-helm/tiller:v2.13.1"
 }

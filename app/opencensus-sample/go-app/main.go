@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"net/http"
 	"bytes"
 	"context"
 	"encoding/binary"
-	"time"
+	"fmt"
+	"log"
+	"net/http"
 	os "os"
+	"time"
 
 	ocagent "contrib.go.opencensus.io/exporter/ocagent"
 	"go.opencensus.io/plugin/ochttp"
@@ -61,9 +61,9 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "hello world from %s", serviceName)
 
-		ctx, span := trace.StartSpan(req.Context(), "main")
+		ctx, span := trace.StartSpan(context.Background(), "main")
 		defer span.End()
-	
+
 		for i := 0; i < 3; i++ {
 			doWork(ctx)
 		}
@@ -72,12 +72,12 @@ func main() {
 		if len(targetService) != 0 {
 			targetServiceURI := fmt.Sprintf("http://%v", targetService)
 			/*
-			httpFormat := &tracecontext.HTTPFormat{}
-			sc, ok := httpFormat.SpanContextFromRequest(req)
-			if ok {
-				_, span := trace.StartSpanWithRemoteParent(req.Context(), serviceName, sc)
-				defer span.End()
-			}
+				httpFormat := &tracecontext.HTTPFormat{}
+				sc, ok := httpFormat.SpanContextFromRequest(req)
+				if ok {
+					_, span := trace.StartSpanWithRemoteParent(req.Context(), serviceName, sc)
+					defer span.End()
+				}
 			*/
 
 			r, _ := http.NewRequest("GET", targetServiceURI, nil)
