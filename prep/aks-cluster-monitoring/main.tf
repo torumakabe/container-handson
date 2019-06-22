@@ -21,17 +21,21 @@ data "azurerm_log_analytics_workspace" "aks" {
   resource_group_name = var.la_workspace_rg
 }
 
+resource "azurerm_resource_group" "aks" {
+  name     = var.aks_cluster_rg
+  location = var.aks_cluster_location
+}
 
 resource "azurerm_virtual_network" "vnet_default" {
   name                = "vnet-default"
-  resource_group_name = var.aks_cluster_rg
-  location            = var.aks_cluster_location
+  resource_group_name = azurerm_resource_group.aks.name
+  location            = azurerm_resource_group.aks.location
   address_space       = ["10.0.0.0/8"]
 }
 
 resource "azurerm_subnet" "aks" {
   name                 = "subnet-aks"
-  resource_group_name  = var.aks_cluster_rg
+  resource_group_name  = azurerm_resource_group.aks.name
   virtual_network_name = azurerm_virtual_network.vnet_default.name
   address_prefix       = "10.240.0.0/16"
 }
@@ -72,8 +76,8 @@ resource "azurerm_kubernetes_cluster" "aks" {
   depends_on          = ["azurerm_role_assignment.aks"]
   name                = var.aks_cluster_name
   kubernetes_version  = "1.13.5"
-  location            = var.aks_cluster_location
-  resource_group_name = var.aks_cluster_rg
+  location            = azurerm_resource_group.aks.location
+  resource_group_name = azurerm_resource_group.aks.name
   dns_prefix          = var.aks_cluster_name
 
   agent_pool_profile {
@@ -109,7 +113,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
   provisioner "local-exec" {
     command = <<EOT
-      az aks get-credentials -g ${var.aks_cluster_rg} -n ${self.name} --admin --overwrite-existing;
+      az aks get-credentials -g ${azurerm_resource_group.aks.name} -n ${self.name} --admin --overwrite-existing;
     EOT
   }
 }
@@ -167,7 +171,7 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
 
 resource "azurerm_monitor_action_group" "critical" {
   name = "critical"
-  resource_group_name = var.aks_cluster_rg
+  resource_group_name = azurerm_resource_group.aks.name
   short_name = "critical"
 
   email_receiver {
@@ -178,7 +182,7 @@ resource "azurerm_monitor_action_group" "critical" {
 
 resource "azurerm_monitor_metric_alert" "unhealthy_nodes" {
   name = "aks-unhealthy-nodes"
-  resource_group_name = var.aks_cluster_rg
+  resource_group_name = azurerm_resource_group.aks.name
   scopes = ["${azurerm_kubernetes_cluster.aks.id}"]
   frequency = "PT1M"
   window_size = "PT5M"
@@ -206,8 +210,8 @@ resource "azurerm_monitor_metric_alert" "unhealthy_nodes" {
 
 resource "azurerm_application_insights" "sampleapp" {
   name = "aks-sampleapp"
-  location = var.aks_cluster_location
-  resource_group_name = var.aks_cluster_rg
+  location = azurerm_resource_group.aks.location
+  resource_group_name = azurerm_resource_group.aks.name
   application_type = "other"
 }
 
@@ -218,8 +222,8 @@ resource "random_uuid" "webtest_req_guid" {}
 
 resource "azurerm_application_insights_web_test" "sampleapp" {
   name = "aks-sampleapp-webtest"
-  location = var.aks_cluster_location
-  resource_group_name = var.aks_cluster_rg
+  location = azurerm_resource_group.aks.location
+  resource_group_name = azurerm_resource_group.aks.name
   application_insights_id = "${azurerm_application_insights.sampleapp.id}"
   kind = "ping"
   frequency = 300
@@ -559,6 +563,10 @@ resource "kubernetes_service" "sampleapp_front" {
 
     type = "LoadBalancer"
   }
+}
+
+output "front_service_ip" {
+  value = kubernetes_service.sampleapp_front.load_balancer_ingress.0.ip
 }
 
 resource "kubernetes_deployment" "sampleapp_front" {
