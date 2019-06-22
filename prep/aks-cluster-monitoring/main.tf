@@ -16,9 +16,12 @@ provider "random" {
 
 data "azurerm_subscription" "current" {}
 
-data "azurerm_log_analytics_workspace" "aks" {
-  name                = var.la_workspace_name
-  resource_group_name = var.la_workspace_rg
+resource "azurerm_log_analytics_workspace" "aks" {
+  name                = "aks-la-workspace"
+  location            = azurerm_resource_group.aks.location
+  resource_group_name = azurerm_resource_group.aks.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
 }
 
 resource "azurerm_resource_group" "aks" {
@@ -107,7 +110,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   addon_profile {
     oms_agent {
       enabled                    = true
-      log_analytics_workspace_id = data.azurerm_log_analytics_workspace.aks.id
+      log_analytics_workspace_id = azurerm_log_analytics_workspace.aks.id
     }
   }
 
@@ -119,9 +122,9 @@ resource "azurerm_kubernetes_cluster" "aks" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "aks" {
-  name = "diag_aks"
+  name = "aks-diag"
   target_resource_id = azurerm_kubernetes_cluster.aks.id
-  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.aks.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.aks.id
 
   log {
     category = "kube-apiserver"
@@ -209,7 +212,7 @@ resource "azurerm_monitor_metric_alert" "unhealthy_nodes" {
 }
 
 resource "azurerm_application_insights" "sampleapp" {
-  name = "aks-sampleapp"
+  name = "aks-ai-sampleapp"
   location = azurerm_resource_group.aks.location
   resource_group_name = azurerm_resource_group.aks.name
   application_type = "other"
@@ -221,7 +224,7 @@ resource "random_uuid" "webtest_id" {}
 resource "random_uuid" "webtest_req_guid" {}
 
 resource "azurerm_application_insights_web_test" "sampleapp" {
-  name = "aks-sampleapp-webtest"
+  name = "aks-ai-sampleapp-webtest"
   location = azurerm_resource_group.aks.location
   resource_group_name = azurerm_resource_group.aks.name
   application_insights_id = "${azurerm_application_insights.sampleapp.id}"
@@ -592,7 +595,7 @@ resource "kubernetes_deployment" "sampleapp_front" {
 
       spec {
         container {
-          image = "torumakabe/oc-go-app:0.1.9"
+          image = "torumakabe/oc-go-app:1.0.0"
           name = "oc-go-app"
 
           port {
@@ -602,6 +605,110 @@ resource "kubernetes_deployment" "sampleapp_front" {
           env {
             name = "SERVICE_NAME"
             value = "front"
+          }
+
+          env {
+            name = "OCAGENT_TRACE_EXPORTER_ENDPOINT"
+            value = "localhost:55678"
+          }
+
+          env {
+            name = "TARGET_SERVICE"
+            value = "middle"
+          }
+
+          liveness_probe {
+            http_get {
+              path = "/healthz"
+              port = 50030
+            }
+
+            initial_delay_seconds = 10
+            period_seconds = 3
+          }
+
+          readiness_probe {
+            http_get {
+              path = "/healthz"
+              port = 50030
+            }
+
+            initial_delay_seconds = 10
+            period_seconds = 5
+          }
+
+        }
+
+        container {
+          image = "torumakabe/oc-local-forwarder:1.0.0"
+          name = "oc-local-forwarder"
+
+          port {
+            container_port = 55678
+          }
+
+          env {
+            name = "APPINSIGHTS_INSTRUMENTATIONKEY"
+            value = azurerm_application_insights.sampleapp.instrumentation_key
+          }
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_service" "sampleapp_middle" {
+  metadata {
+    name = "middle"
+  }
+
+  spec {
+    selector = {
+      app = "middle"
+    }
+
+    port {
+      port = 80
+      target_port = 50030
+    }
+
+    type = "ClusterIP"
+  }
+}
+
+resource "kubernetes_deployment" "sampleapp_middle" {
+  metadata {
+    name = "middle"
+  }
+
+  spec {
+    replicas = 1
+
+    selector {
+      match_labels = {
+        app = "middle"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          app = "middle"
+        }
+      }
+
+      spec {
+        container {
+          image = "torumakabe/oc-go-app:1.0.0"
+          name = "oc-go-app"
+
+          port {
+            container_port = 50030
+          }
+
+          env {
+            name = "SERVICE_NAME"
+            value = "middle"
           }
 
           env {
@@ -637,7 +744,7 @@ resource "kubernetes_deployment" "sampleapp_front" {
         }
 
         container {
-          image = "torumakabe/oc-local-forwarder:0.0.1"
+          image = "torumakabe/oc-local-forwarder:1.0.0"
           name = "oc-local-forwarder"
 
           port {
@@ -696,7 +803,7 @@ resource "kubernetes_deployment" "sampleapp_back" {
 
       spec {
         container {
-          image = "torumakabe/oc-go-app:0.1.9"
+          image = "torumakabe/oc-go-app:1.0.0"
           name = "oc-go-app"
 
           port {
@@ -736,7 +843,7 @@ resource "kubernetes_deployment" "sampleapp_back" {
         }
 
         container {
-          image = "torumakabe/oc-local-forwarder:0.0.1"
+          image = "torumakabe/oc-local-forwarder:1.0.0"
           name = "oc-local-forwarder"
 
           port {
@@ -752,3 +859,4 @@ resource "kubernetes_deployment" "sampleapp_back" {
     }
   }
 }
+

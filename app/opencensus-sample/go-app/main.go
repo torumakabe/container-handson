@@ -1,9 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"context"
-	"encoding/binary"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,27 +12,6 @@ import (
 	"go.opencensus.io/plugin/ochttp/propagation/tracecontext"
 	"go.opencensus.io/trace"
 )
-
-func doWork(ctx context.Context) {
-	_, span := trace.StartSpan(ctx, "doWork")
-	defer span.End()
-
-	fmt.Println("doing busy work")
-	time.Sleep(80 * time.Millisecond)
-	buf := bytes.NewBuffer([]byte{0xFF, 0x00, 0x00, 0x00})
-	num, err := binary.ReadVarint(buf)
-	if err != nil {
-		span.SetStatus(trace.Status{
-			Code:    trace.StatusCodeUnknown,
-			Message: err.Error(),
-		})
-	}
-
-	span.Annotate([]trace.Attribute{
-		trace.Int64Attribute("bytes to int", num),
-	}, "Invoking doWork")
-	time.Sleep(20 * time.Millisecond)
-}
 
 func main() {
 	// Register trace exporters to export the collected data.
@@ -61,24 +37,9 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "hello world from %s", serviceName)
 
-		ctx, span := trace.StartSpan(context.Background(), "main")
-		defer span.End()
-
-		for i := 0; i < 3; i++ {
-			doWork(ctx)
-		}
-
 		targetService := os.Getenv("TARGET_SERVICE")
 		if len(targetService) != 0 {
 			targetServiceURI := fmt.Sprintf("http://%v", targetService)
-			/*
-				httpFormat := &tracecontext.HTTPFormat{}
-				sc, ok := httpFormat.SpanContextFromRequest(req)
-				if ok {
-					_, span := trace.StartSpanWithRemoteParent(req.Context(), serviceName, sc)
-					defer span.End()
-				}
-			*/
 
 			r, _ := http.NewRequest("GET", targetServiceURI, nil)
 
@@ -92,6 +53,7 @@ func main() {
 				resp.Body.Close()
 			}
 		}
+		time.Sleep(20 * time.Millisecond)
 
 	})
 
