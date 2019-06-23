@@ -501,6 +501,19 @@ alertmanager:
           resources:
             requests:
               storage: 5Gi
+additionalPrometheusRules:
+  - name: sample 
+    groups:
+    - name: kubernetes-apps-additional
+      rules:
+      - alert: KubePodCrashLooping15m
+        annotations:
+          message: Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} ({{`{{ $labels.container }}`}}) is restarting {{`{{ printf "%.2f" $value }}`}} times / 5 minutes.
+          runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodcrashlooping
+        expr: rate(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[15m]) * 60 * 5 > 0
+        for: 15m
+        labels:
+          severity: critical
 
 grafana:
   adminPassword: "${random_string.grafana_password.result}"
