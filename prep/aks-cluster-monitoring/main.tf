@@ -71,7 +71,7 @@ resource "azurerm_role_assignment" "aks" {
 
   // Waiting for AAD global replication
   provisioner "local-exec" {
-    command = "sleep 45"
+    command = "sleep 60"
   }
 }
 
