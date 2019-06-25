@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ai-express
+  name: ai-express
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-express
+  template:
+    metadata:
+      labels:
+        app: ai-express
+      name: ai-express
+    spec:
+      containers:
+      - name: express
+        image: torumakabe/ai-express:1.0.0
+        ports:
+        - containerPort: 8080
+        env:
+        - name: APPINSIGHTS_INSTRUMENTATIONKEY
+          value: "your-appinsights-ikey"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-express
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: ai-express
+  type: LoadBalancer

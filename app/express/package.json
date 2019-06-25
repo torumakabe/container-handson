@@ -1,0 +1,13 @@
+{
+    "name": "ai_express",
+    "version": "1.0.0",
+    "description": "Application Insights sample for express",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "applicationinsights": "^1.4.0",
+        "express": "^4.16.1"
+    }
+}
