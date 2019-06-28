@@ -44,8 +44,8 @@ resource "azurerm_subnet" "aks" {
 }
 
 resource "azuread_application" "aks" {
-  name            = "${var.aks_cluster_name}-aadapp"
-  identifier_uris = ["https://${var.aks_cluster_name}-aadapp"]
+  name = "${var.aks_cluster_name}-aadapp"
+  //  identifier_uris = ["https://${var.aks_cluster_name}-aadapp"]
 }
 
 resource "azuread_service_principal" "aks" {
