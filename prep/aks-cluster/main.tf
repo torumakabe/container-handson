@@ -1,7 +1,14 @@
+module "rg" {
+  source = "../modules/rg"
+
+  aks_cluster_rg       = var.aks_cluster_rg
+  aks_cluster_location = var.aks_cluster_location
+}
+
 module "network" {
   source = "../modules/network"
 
-  aks_cluster_rg       = var.aks_cluster_rg
+  aks_cluster_rg       = module.rg.aks_cluster_rg_out
   aks_cluster_location = var.aks_cluster_location
 }
 
