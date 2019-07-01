@@ -10,5 +10,7 @@ RUN go build -o /goapp main.go
 
 # production stage
 FROM alpine:3.9
+# RUN apk add --no-cache tini
+# ENTRYPOINT ["/sbin/tini", "--"]
 COPY --from=build-stage /goapp /
-ENTRYPOINT ["/goapp"]
+CMD ["/goapp"]
