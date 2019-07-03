@@ -10,7 +10,7 @@ RUN go build -o /goapp main.go
 
 # production stage
 FROM alpine:3.9
-# RUN apk add --no-cache tini
-# ENTRYPOINT ["/sbin/tini", "--"]
+RUN apk add --no-cache dumb-init
+ENTRYPOINT ["/usr/bin/dumb-init", "--rewrite", "15:3", "--"]
 COPY --from=build-stage /goapp /
 CMD ["/goapp"]
