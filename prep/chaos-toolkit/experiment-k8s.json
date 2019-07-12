@@ -14,7 +14,7 @@
                 "tolerance": 200,
                 "provider": {
                     "type": "http",
-                    "url": "http://13.78.40.18"
+                    "url": "http://xxx.xxx.xxx.xxx"
                 }
             }
         ]
