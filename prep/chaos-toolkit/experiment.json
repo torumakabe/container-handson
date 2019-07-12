@@ -1,0 +1,70 @@
+{
+    "version": "1.0.0",
+    "title": "...",
+    "description": "...",
+    "tags": [
+        "azure",
+        "kubernetes",
+        "aks",
+        "node"
+    ],
+    "configuration": {
+        "azure": {
+            "subscription_id": {
+                "type": "env",
+                "key": "AZURE_SUBSCRIPTION_ID"
+            }
+        }
+    },
+    "secrets": {
+        "azure": {
+            "client_id": {
+                "type": "env",
+                "key": "AZURE_CLIENT_ID"
+            },
+            "client_secret": {
+                "type": "env",
+                "key": "AZURE_CLIENT_SECRET"
+            },
+            "tenant_id": {
+                "type": "env",
+                "key": "AZURE_TENANT_ID"
+            }
+        }
+    },
+    "steady-state-hypothesis": {
+        "title": "Services are all available and healthy",
+        "probes": [
+            {
+                "type": "probe",
+                "name": "consumer-service-must-still-respond",
+                "tolerance": 200,
+                "provider": {
+                    "type": "http",
+                    "url": "http://13.78.40.18"
+                }
+            }
+        ]
+    },
+    "method": [
+        {
+            "type": "action",
+            "name": "restart-vmss",
+            "provider": {
+                "type": "python",
+                "module": "chaosazure.vmss.actions",
+                "func": "restart_vmss",
+                "secrets": [
+                    "azure"
+                ],
+                "config": [
+                    "azure"
+                ],
+                "arguments": {
+                    "filter": "where resourceGroup==”myresourcegroup” and name=”myresourcename”
+                }
+            }
+        }
+    ],
+    "rollbacks": []
+}

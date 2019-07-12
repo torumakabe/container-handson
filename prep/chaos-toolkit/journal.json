@@ -1,0 +1,176 @@
+{
+  "chaoslib-version": "1.5.0",
+  "platform": "Linux-4.4.0-18362-Microsoft-x86_64-with-Ubuntu-18.04-bionic",
+  "node": "TOMAKABE-X12018",
+  "experiment": {
+    "version": "1.0.0",
+    "title": "...",
+    "description": "...",
+    "tags": [
+      "azure",
+      "kubernetes",
+      "aks",
+      "node"
+    ],
+    "configuration": {
+      "azure": {
+        "subscription_id": {
+          "type": "env",
+          "key": "AZURE_SUBSCRIPTION_ID"
+        }
+      }
+    },
+    "secrets": {
+      "azure": {
+        "client_id": {
+          "type": "env",
+          "key": "AZURE_CLIENT_ID"
+        },
+        "client_secret": {
+          "type": "env",
+          "key": "AZURE_CLIENT_SECRET"
+        },
+        "tenant_id": {
+          "type": "env",
+          "key": "AZURE_TENANT_ID"
+        }
+      }
+    },
+    "steady-state-hypothesis": {
+      "title": "Services are all available and healthy",
+      "probes": [
+        {
+          "type": "probe",
+          "name": "consumer-service-must-still-respond",
+          "tolerance": 200,
+          "provider": {
+            "type": "http",
+            "url": "http://13.78.40.18"
+          }
+        }
+      ]
+    },
+    "method": [
+      {
+        "type": "action",
+        "name": "restart-vmss",
+        "provider": {
+          "type": "python",
+          "module": "chaosazure.vmss.actions",
+          "func": "restart_vmss",
+          "secrets": [
+            "azure"
+          ],
+          "config": [
+            "azure"
+          ]
+        }
+      }
+    ],
+    "rollbacks": [],
+    "dry": false
+  },
+  "start": "2019-07-12T06:38:56.609024",
+  "status": "completed",
+  "deviated": false,
+  "steady_states": {
+    "before": {
+      "steady_state_met": true,
+      "probes": [
+        {
+          "activity": {
+            "type": "probe",
+            "name": "consumer-service-must-still-respond",
+            "tolerance": 200,
+            "provider": {
+              "type": "http",
+              "url": "http://13.78.40.18"
+            }
+          },
+          "output": {
+            "status": 200,
+            "headers": {
+              "Date": "Fri, 12 Jul 2019 06:38:56 GMT",
+              "Content-Length": "22",
+              "Content-Type": "text/plain; charset=utf-8"
+            },
+            "body": "hello world from front"
+          },
+          "status": "succeeded",
+          "start": "2019-07-12T06:38:56.610528",
+          "end": "2019-07-12T06:38:56.703234",
+          "duration": 0.092706,
+          "tolerance_met": true
+        }
+      ]
+    },
+    "after": {
+      "steady_state_met": true,
+      "probes": [
+        {
+          "activity": {
+            "type": "probe",
+            "name": "consumer-service-must-still-respond",
+            "tolerance": 200,
+            "provider": {
+              "type": "http",
+              "url": "http://13.78.40.18"
+            }
+          },
+          "output": {
+            "status": 200,
+            "headers": {
+              "Date": "Fri, 12 Jul 2019 06:38:57 GMT",
+              "Content-Length": "22",
+              "Content-Type": "text/plain; charset=utf-8"
+            },
+            "body": "hello world from front"
+          },
+          "status": "succeeded",
+          "start": "2019-07-12T06:38:57.786670",
+          "end": "2019-07-12T06:38:57.870270",
+          "duration": 0.0836,
+          "tolerance_met": true
+        }
+      ]
+    }
+  },
+  "run": [
+    {
+      "activity": {
+        "type": "action",
+        "name": "restart-vmss",
+        "provider": {
+          "type": "python",
+          "module": "chaosazure.vmss.actions",
+          "func": "restart_vmss",
+          "secrets": [
+            "azure"
+          ],
+          "config": [
+            "azure"
+          ]
+        }
+      },
+      "output": null,
+      "status": "failed",
+      "exception": [
+        "Traceback (most recent call last):\n",
+        "  File \"/home/tomakabe/.local/lib/python3.6/site-packages/chaoslib/provider/python.py\", line 55, in run_python_activity\n    return func(**arguments)\n",
+        "  File \"/home/tomakabe/.local/lib/python3.6/site-packages/chaosazure/vmss/actions.py\", line 68, in restart_vmss\n    vmss = choose_vmss_at_random(filter, configuration, secrets)\n",
+        "  File \"/home/tomakabe/.local/lib/python3.6/site-packages/chaosazure/vmss/actions.py\", line 159, in choose_vmss_at_random\n    vmss = fetch_resources(filter, RES_TYPE_VMSS, secrets, configuration)\n",
+        "  File \"/home/tomakabe/.local/lib/python3.6/site-packages/chaosazure/rgraph/resource_graph.py\", line 13, in fetch_resources\n    resources = client.resources(query)\n",
+        "  File \"/home/tomakabe/.local/lib/python3.6/site-packages/azure/mgmt/resourcegraph/operations/_resource_graph_client_operations.py\", line 64, in resources\n    raise models.ErrorResponseException(self._deserialize, response)\n",
+        "azure.mgmt.resourcegraph.models._models_py3.ErrorResponseException: (BadRequest) Please provide below info when asking for support: timestamp = 2019-07-12T06:38:57.7030962Z, correlationId = 297b8aeb-1816-4b12-b243-ec4fe2ed3a8e.\n",
+        "\nDuring handling of the above exception, another exception occurred:\n\n",
+        "chaoslib.exceptions.ActivityFailed: azure.mgmt.resourcegraph.models._models_py3.ErrorResponseException: (BadRequest) Please provide below info when asking for support: timestamp = 2019-07-12T06:38:57.7030962Z, correlationId = 297b8aeb-1816-4b12-b243-ec4fe2ed3a8e.\n"
+      ],
+      "start": "2019-07-12T06:38:56.703858",
+      "end": "2019-07-12T06:38:57.786207",
+      "duration": 1.082349
+    }
+  ],
+  "rollbacks": [],
+  "end": "2019-07-12T06:38:57.871041",
+  "duration": 1.2965726852416992
+}
