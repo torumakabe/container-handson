@@ -61,7 +61,7 @@
                     "azure"
                 ],
                 "arguments": {
-                    "filter": "where resourceGroup==”myresourcegroup” and name=”myresourcename”
+                    "filter": "where resourceGroup=MC_rg-aks-monitoring-eval_tomakabe-monitoring-eval_japaneast and name=aks-pool1-25812597-vmss"
                 }
             }
         }

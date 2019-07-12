@@ -167,3 +167,6 @@ typings/
 
 # DynamoDB Local files
 .dynamodb/
+
+# Chaos Toolkit files
+journal.json
