@@ -43,11 +43,10 @@ resource "azurerm_role_assignment" "aks" {
   role_definition_name = "Contributor"
   principal_id         = azuread_service_principal.aks.id
 
-  /* Waiting for AAD global replication
+  // Waiting for AAD global replication
   provisioner "local-exec" {
     command = "sleep 60"
   }
-  */
 }
 
 resource "azurerm_kubernetes_cluster" "aks" {
