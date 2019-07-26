@@ -67,9 +67,6 @@
                 "secrets": [
                     "azure"
                 ],
-                "config": [
-                    "azure"
-                ],
                 "arguments": {
                     "filter": ""
                 }
