@@ -1,19 +1,18 @@
 {
     "version": "1.0.0",
-    "title": "...",
-    "description": "...",
+    "title": "My application is resilient to pod death",
+    "description": "Can my application maintain itself under the conditions of node deallocation?",
     "tags": [
-        "azure",
         "kubernetes",
-        "aks",
-        "node"
+        "azure"
     ],
     "configuration": {
         "azure": {
-            "subscription_id": {
-                "type": "env",
-                "key": "AZURE_SUBSCRIPTION_ID"
-            }
+            "subscription_id": "AZURE_SUBSCRIPTION_ID"
+        },
+        "service_url": {
+            "type": "env",
+            "key": "APPLICATION_ENTRYPOINT_URL"
         }
     },
     "secrets": {
@@ -32,16 +31,24 @@
             }
         }
     },
+    "contributions": {
+        "availability": "high",
+        "reliability": "high",
+        "safety": "medium",
+        "security": "none",
+        "performability": "none"
+    },
     "steady-state-hypothesis": {
-        "title": "Services are all available and healthy",
+        "title": "Application is normal",
         "probes": [
             {
                 "type": "probe",
-                "name": "consumer-service-must-still-respond",
+                "name": "application-must-respond-normally",
                 "tolerance": 200,
                 "provider": {
                     "type": "http",
-                    "url": "http://xxx.xxx.xxx.xxx"
+                    "url": "${service_url}",
+                    "timeout": 0.5
                 }
             }
         ]
@@ -49,11 +56,11 @@
     "method": [
         {
             "type": "action",
-            "name": "restart-vmss",
+            "name": "deallocate-vmss",
             "provider": {
-                "type": "python",
                 "module": "chaosazure.vmss.actions",
-                "func": "restart_vmss",
+                "type": "python",
+                "func": "deallocate_vmss",
                 "secrets": [
                     "azure"
                 ],
@@ -61,10 +68,12 @@
                     "azure"
                 ],
                 "arguments": {
-                    "filter": "your query"
+                    "filter": ""
                 }
+            },
+            "pauses": {
+                "after": 2
             }
         }
-    ],
-    "rollbacks": []
+    ]
 }
