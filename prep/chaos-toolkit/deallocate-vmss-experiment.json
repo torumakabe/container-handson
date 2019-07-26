@@ -1,6 +1,6 @@
 {
     "version": "1.0.0",
-    "title": "My application is resilient to pod death",
+    "title": "My application is resilient to node death",
     "description": "Can my application maintain itself under the conditions of node deallocation?",
     "tags": [
         "kubernetes",
@@ -8,7 +8,10 @@
     ],
     "configuration": {
         "azure": {
-            "subscription_id": "AZURE_SUBSCRIPTION_ID"
+            "subscription_id": {
+                "type": "env",
+                "key": "AZURE_SUBSCRIPTION_ID"
+            }
         },
         "service_url": {
             "type": "env",
