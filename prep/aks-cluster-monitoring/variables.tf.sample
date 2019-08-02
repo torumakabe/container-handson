@@ -11,7 +11,7 @@ variable "aks_cluster_location" {
 }
 
 variable "tiller_image" {
-  default = "gcr.io/kubernetes-helm/tiller:v2.13.1"
+  default = "gcr.io/kubernetes-helm/tiller:v2.14.3"
 }
 
 variable "admin_email_address" {
