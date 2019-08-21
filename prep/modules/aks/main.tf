@@ -52,7 +52,7 @@ resource "azurerm_role_assignment" "aks" {
 resource "azurerm_kubernetes_cluster" "aks" {
   depends_on          = ["azurerm_role_assignment.aks"]
   name                = var.aks_cluster_name
-  kubernetes_version  = "1.14.5"
+  kubernetes_version  = "1.14.6"
   location            = var.aks_cluster_location
   resource_group_name = var.aks_cluster_rg
   dns_prefix          = var.aks_cluster_name
@@ -99,10 +99,10 @@ resource "azurerm_kubernetes_cluster" "aks" {
 provider "kubernetes" {
   version = "~>1.8"
 
-  load_config_file = false
-  host = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
-  client_certificate = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)}"
-  client_key = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)}"
+  load_config_file       = false
+  host                   = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
+  client_certificate     = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)}"
+  client_key             = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)}"
   cluster_ca_certificate = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)}"
 }
 
@@ -112,15 +112,15 @@ resource "kubernetes_cluster_role_binding" "kubernetes-dashboard-rule" {
   }
 
   role_ref {
-    kind = "ClusterRole"
-    name = "cluster-admin"
+    kind      = "ClusterRole"
+    name      = "cluster-admin"
     api_group = "rbac.authorization.k8s.io"
   }
 
   subject {
-    kind = "ServiceAccount"
+    kind      = "ServiceAccount"
     namespace = "kube-system"
-    name = "kubernetes-dashboard"
+    name      = "kubernetes-dashboard"
     api_group = ""
   }
 }
@@ -130,7 +130,7 @@ ToDo: Replace it with tillerless Helm v3
 */
 resource "kubernetes_service_account" "tiller" {
   metadata {
-    name = "tiller"
+    name      = "tiller"
     namespace = "kube-system"
   }
 }
@@ -145,13 +145,13 @@ resource "kubernetes_cluster_role_binding" "tiller" {
 
   role_ref {
     api_group = "rbac.authorization.k8s.io"
-    kind = "ClusterRole"
-    name = "cluster-admin"
+    kind      = "ClusterRole"
+    name      = "cluster-admin"
   }
 
   subject {
-    kind = "ServiceAccount"
-    name = kubernetes_service_account.tiller.metadata[0].name
+    kind      = "ServiceAccount"
+    name      = kubernetes_service_account.tiller.metadata[0].name
     namespace = "kube-system"
   }
 }
@@ -161,12 +161,12 @@ ToDo: Replace it with tillerless Helm v3
 */
 resource "kubernetes_deployment" "tiller" {
   metadata {
-    name = "tiller-deploy"
+    name      = "tiller-deploy"
     namespace = kubernetes_service_account.tiller.metadata[0].namespace
 
     labels = {
       name = "tiller"
-      app = "helm"
+      app  = "helm"
     }
   }
 
@@ -176,7 +176,7 @@ resource "kubernetes_deployment" "tiller" {
     selector {
       match_labels = {
         name = "tiller"
-        app = "helm"
+        app  = "helm"
       }
     }
 
@@ -184,25 +184,25 @@ resource "kubernetes_deployment" "tiller" {
       metadata {
         labels = {
           name = "tiller"
-          app = "helm"
+          app  = "helm"
         }
       }
 
       spec {
         container {
-          image = var.tiller_image
-          name = "tiller"
+          image             = var.tiller_image
+          name              = "tiller"
           image_pull_policy = "IfNotPresent"
-          command = ["/tiller"]
-          args = ["--listen=localhost:44134"]
+          command           = ["/tiller"]
+          args              = ["--listen=localhost:44134"]
 
           env {
-            name = "TILLER_NAMESPACE"
+            name  = "TILLER_NAMESPACE"
             value = kubernetes_service_account.tiller.metadata[0].namespace
           }
 
           env {
-            name = "TILLER_HISTORY_MAX"
+            name  = "TILLER_HISTORY_MAX"
             value = "0"
           }
 
@@ -213,7 +213,7 @@ resource "kubernetes_deployment" "tiller" {
             }
 
             initial_delay_seconds = "1"
-            timeout_seconds = "1"
+            timeout_seconds       = "1"
           }
 
           readiness_probe {
@@ -223,13 +223,13 @@ resource "kubernetes_deployment" "tiller" {
             }
 
             initial_delay_seconds = "1"
-            timeout_seconds = "1"
+            timeout_seconds       = "1"
           }
 
           volume_mount {
             mount_path = "/var/run/secrets/kubernetes.io/serviceaccount"
-            name = kubernetes_service_account.tiller.default_secret_name
-            read_only = true
+            name       = kubernetes_service_account.tiller.default_secret_name
+            read_only  = true
           }
         }
 

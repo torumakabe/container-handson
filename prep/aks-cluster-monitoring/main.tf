@@ -78,7 +78,7 @@ resource "azurerm_role_assignment" "aks" {
 resource "azurerm_kubernetes_cluster" "aks" {
   depends_on          = ["azurerm_role_assignment.aks"]
   name                = var.aks_cluster_name
-  kubernetes_version  = "1.14.5"
+  kubernetes_version  = "1.14.6"
   location            = azurerm_resource_group.aks.location
   resource_group_name = azurerm_resource_group.aks.name
   dns_prefix          = var.aks_cluster_name
