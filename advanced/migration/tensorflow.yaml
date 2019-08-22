@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tensorflow
+  labels:
+    app: tensorflow
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: tensorflow
+  template:
+    metadata:
+      labels:
+        app: tensorflow
+    spec:
+      containers:
+        - name: tensorflow
+          image: tensorflow/tensorflow:latest-jupyter
+          resources:
+            requests:
+              cpu: 50m
+              memory: 100Mi
+            limits:
+              cpu: 50m
+              memory: 300Mi
+          imagePullPolicy: Always
