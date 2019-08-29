@@ -247,7 +247,7 @@ XML
 */
 
 provider "kubernetes" {
-  version = "~>1.8"
+  version = "~>1.9"
 
   load_config_file       = false
   host                   = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
