@@ -1,5 +1,5 @@
 provider "azurerm" {
-  version = "~>1.32"
+  version = "~>1.33"
 }
 
 provider "azuread" {
@@ -63,6 +63,8 @@ resource "azurerm_kubernetes_cluster" "aks" {
     enable_auto_scaling = true
     vnet_subnet_id      = var.aks_subnet_id
     count               = 3
+    min_count           = 3
+    max_count           = 3
     vm_size             = "Standard_D2s_v3"
     os_type             = "Linux"
     os_disk_size_gb     = 30
@@ -98,7 +100,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 }
 
 provider "kubernetes" {
-  version = "~>1.8"
+  version = "~>1.9"
 
   load_config_file       = false
   host                   = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
