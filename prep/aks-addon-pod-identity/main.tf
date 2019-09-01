@@ -7,7 +7,7 @@ provider "azuread" {
 }
 
 provider "helm" {
-  version = "~>0.9"
+  version = "~>0.10"
 
   install_tiller  = false
   namespace       = "kube-system"
