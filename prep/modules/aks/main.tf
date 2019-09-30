@@ -128,6 +128,36 @@ resource "kubernetes_cluster_role_binding" "kubernetes-dashboard-rule" {
   }
 }
 
+resource "kubernetes_cluster_role" "log_reader" {
+  metadata {
+    name = "containerhealth-log-reader"
+  }
+
+  rule {
+    api_groups = [""]
+    resources  = ["pods/log", "events"]
+    verbs      = ["get", "list"]
+  }
+}
+
+resource "kubernetes_cluster_role_binding" "log_reader" {
+  metadata {
+    name = "containerhealth-read-logs-global"
+  }
+
+  role_ref {
+    kind      = "ClusterRole"
+    name      = "containerhealth-log-reader"
+    api_group = "rbac.authorization.k8s.io"
+  }
+
+  subject {
+    kind      = "User"
+    name      = "clusterUser"
+    api_group = "rbac.authorization.k8s.io"
+  }
+}
+
 /*
 ToDo: Replace it with tillerless Helm v3 
 */

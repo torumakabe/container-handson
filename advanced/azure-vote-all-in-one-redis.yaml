@@ -13,11 +13,18 @@ spec:
         app: azure-vote-back
     spec:
       containers:
-      - name: azure-vote-back
-        image: redis
-        ports:
-        - containerPort: 6379
-          name: redis
+        - name: azure-vote-back
+          image: redis
+          ports:
+            - containerPort: 6379
+              name: redis
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100M
+            limits:
+              cpu: 100m
+              memory: 100M
 ---
 apiVersion: v1
 kind: Service
@@ -25,7 +32,7 @@ metadata:
   name: azure-vote-back
 spec:
   ports:
-  - port: 6379
+    - port: 6379
   selector:
     app: azure-vote-back
 ---
@@ -42,25 +49,27 @@ spec:
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 1
-  minReadySeconds: 5 
+  minReadySeconds: 5
   template:
     metadata:
       labels:
         app: azure-vote-front
     spec:
       containers:
-      - name: azure-vote-front
-        image: torumakabe/vote:0.0.1
-        ports:
-        - containerPort: 80
-        resources:
-          requests:
-            cpu: 250m
-          limits:
-            cpu: 500m
-        env:
-        - name: REDIS
-          value: "azure-vote-back"
+        - name: azure-vote-front
+          image: torumakabe/vote:0.0.1
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100M
+            limits:
+              cpu: 100m
+              memory: 100M
+          env:
+            - name: REDIS
+              value: "azure-vote-back"
 ---
 apiVersion: v1
 kind: Service
@@ -69,6 +78,6 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-  - port: 80
+    - port: 80
   selector:
     app: azure-vote-front
