@@ -62,6 +62,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
     type                = "VirtualMachineScaleSets"
     enable_auto_scaling = true
     vnet_subnet_id      = var.aks_subnet_id
+    availability_zones  = [1, 2, 3]
     count               = 3
     min_count           = 3
     max_count           = 3
