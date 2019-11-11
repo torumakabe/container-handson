@@ -3,7 +3,7 @@ ToDo: Replace kubeconfig auth. with Terraform data source & add helm provider
 When this helm issue has been resolved https://github.com/terraform-providers/terraform-provider-helm/issues/148
 */
 provider "kubernetes" {
-  version = "~>1.9"
+  version = "~>1.10"
   /*
   load_config_file       = false
   host                   = "${data.azurerm_kubernetes_cluster.aks.kube_config.0.host}"
