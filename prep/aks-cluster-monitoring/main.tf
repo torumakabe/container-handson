@@ -49,7 +49,7 @@ resource "azuread_application" "aks" {
 }
 
 resource "azuread_service_principal" "aks" {
-  application_id = "${azuread_application.aks.application_id}"
+  application_id = azuread_application.aks.application_id
 }
 
 resource "random_string" "aks_password" {
@@ -64,7 +64,7 @@ resource "azuread_service_principal_password" "aks" {
 }
 
 resource "azurerm_role_assignment" "aks" {
-  depends_on           = ["azuread_service_principal_password.aks"]
+  depends_on           = [azuread_service_principal_password.aks]
   scope                = data.azurerm_subscription.current.id
   role_definition_name = "Contributor"
   principal_id         = azuread_service_principal.aks.id
@@ -76,7 +76,7 @@ resource "azurerm_role_assignment" "aks" {
 }
 
 resource "azurerm_kubernetes_cluster" "aks" {
-  depends_on          = ["azurerm_role_assignment.aks"]
+  depends_on          = [azurerm_role_assignment.aks]
   name                = var.aks_cluster_name
   kubernetes_version  = "1.15.5"
   location            = azurerm_resource_group.aks.location
@@ -250,10 +250,10 @@ provider "kubernetes" {
   version = "~>1.9"
 
   load_config_file       = false
-  host                   = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
-  client_certificate     = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)}"
-  client_key             = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)}"
-  cluster_ca_certificate = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)}"
+  host                   = azurerm_kubernetes_cluster.aks.kube_config.0.host
+  client_certificate     = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)
+  client_key             = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)
+  cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)
 }
 
 resource "kubernetes_cluster_role_binding" "kubernetes-dashboard-rule" {
@@ -452,10 +452,10 @@ provider "helm" {
   version = "~>0.10"
 
   kubernetes {
-    host                   = "${azurerm_kubernetes_cluster.aks.kube_config.0.host}"
-    client_certificate     = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)}"
-    client_key             = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)}"
-    cluster_ca_certificate = "${base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)}"
+    host                   = azurerm_kubernetes_cluster.aks.kube_config.0.host
+    client_certificate     = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)
+    client_key             = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)
+    cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)
   }
 
   install_tiller  = false
