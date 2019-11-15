@@ -101,7 +101,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 }
 
 provider "kubernetes" {
-  version = "~>1.9"
+  version = "~>1.10"
 
   load_config_file       = false
   host                   = azurerm_kubernetes_cluster.aks.kube_config.0.host
