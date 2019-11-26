@@ -68,7 +68,6 @@ resource "azurerm_kubernetes_cluster" "aks" {
     max_count           = 3
     vm_size             = "Standard_D2s_v3"
     os_type             = "Linux"
-    os_disk_size_gb     = 30
   }
 
   service_principal {
