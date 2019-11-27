@@ -83,13 +83,17 @@ resource "azurerm_kubernetes_cluster" "aks" {
   resource_group_name = azurerm_resource_group.aks.name
   dns_prefix          = var.aks_cluster_name
 
-  agent_pool_profile {
-    name           = "pool1"
-    type           = "VirtualMachineScaleSets"
-    vnet_subnet_id = azurerm_subnet.aks.id
-    count          = 3
-    vm_size        = "Standard_D2s_v3"
-    os_type        = "Linux"
+  default_node_pool {
+    name                = "pool1"
+    type                = "VirtualMachineScaleSets"
+    enable_auto_scaling = true
+    vnet_subnet_id      = var.aks_subnet_id
+    availability_zones  = [1, 2, 3]
+    node_count          = 3
+    min_count           = 3
+    max_count           = 3
+    vm_size             = "Standard_D2s_v3"
+/*    os_type             = "Linux" */
   }
 
   service_principal {
