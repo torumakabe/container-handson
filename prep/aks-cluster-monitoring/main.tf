@@ -3,7 +3,7 @@ terraform {
 }
 
 provider "azurerm" {
-  version = "~>1.37"
+  version = "~>1.38"
 }
 
 provider "azuread" {
@@ -93,7 +93,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
     min_count           = 3
     max_count           = 3
     vm_size             = "Standard_D2s_v3"
-/*    os_type             = "Linux" */
+    /*    os_type             = "Linux" */
   }
 
   service_principal {
