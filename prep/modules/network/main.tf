@@ -1,5 +1,5 @@
 provider "azurerm" {
-  version = "~>1.38"
+  version = "~>1.39"
 }
 
 resource "azurerm_virtual_network" "vnet_default" {
