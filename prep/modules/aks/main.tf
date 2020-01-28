@@ -1,5 +1,5 @@
 provider "azurerm" {
-  version = "~>1.40"
+  version = "~>1.42"
 }
 
 provider "azuread" {
@@ -83,6 +83,9 @@ resource "azurerm_kubernetes_cluster" "aks" {
     network_plugin    = "azure"
     network_policy    = "azure"
     load_balancer_sku = "standard"
+    load_balancer_profile {
+      managed_outbound_ip_count = 1
+    }
   }
 
   addon_profile {
