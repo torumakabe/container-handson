@@ -112,6 +112,57 @@ provider "kubernetes" {
   cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)
 }
 
+resource "azurerm_monitor_diagnostic_setting" "aks" {
+  name                       = "aks-diag"
+  target_resource_id         = azurerm_kubernetes_cluster.aks.id
+  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.aks.id
+
+  log {
+    category = "kube-apiserver"
+    enabled  = true
+
+    retention_policy {
+      enabled = false
+    }
+  }
+
+  log {
+    category = "kube-controller-manager"
+    enabled  = true
+
+    retention_policy {
+      enabled = false
+    }
+  }
+
+  log {
+    category = "kube-scheduler"
+    enabled  = true
+
+    retention_policy {
+      enabled = false
+    }
+  }
+
+  log {
+    category = "kube-audit"
+    enabled  = true
+
+    retention_policy {
+      enabled = false
+    }
+  }
+
+  log {
+    category = "cluster-autoscaler"
+    enabled  = true
+
+    retention_policy {
+      enabled = false
+    }
+  }
+}
+
 resource "kubernetes_cluster_role_binding" "kubernetes-dashboard-rule" {
   metadata {
     name = "kubernetes-dashboard-rule"
@@ -158,5 +209,36 @@ resource "kubernetes_cluster_role_binding" "log_reader" {
     kind      = "User"
     name      = "clusterUser"
     api_group = "rbac.authorization.k8s.io"
+  }
+}
+
+provider "helm" {
+  version = "~>1.0"
+
+  kubernetes {
+    host                   = azurerm_kubernetes_cluster.aks.kube_config.0.host
+    client_certificate     = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)
+    client_key             = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)
+    cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)
+  }
+}
+
+data "helm_repository" "default" {
+  name = "default"
+  url  = "https://kubernetes-charts.storage.googleapis.com/"
+}
+
+resource "helm_release" "sampledb" {
+  name  = "sampledb"
+  chart = "stable/mariadb"
+
+  set {
+    name  = "mariadbUser"
+    value = "foo"
+  }
+
+  set {
+    name  = "mariadbPassword"
+    value = "qux"
   }
 }
