@@ -103,7 +103,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 }
 
 provider "kubernetes" {
-  version = "~>1.11"
+  version = "~>1.10.0"
 
   load_config_file       = false
   host                   = azurerm_kubernetes_cluster.aks.kube_config.0.host
@@ -212,6 +212,12 @@ resource "kubernetes_cluster_role_binding" "log_reader" {
   }
 }
 
+resource "kubernetes_namespace" "monitoring" {
+  metadata {
+    name = "monitoring"
+  }
+}
+
 provider "helm" {
   version = "~>1.0"
 
@@ -228,17 +234,79 @@ data "helm_repository" "default" {
   url  = "https://kubernetes-charts.storage.googleapis.com/"
 }
 
-resource "helm_release" "sampledb" {
-  name  = "sampledb"
-  chart = "stable/mariadb"
+resource "random_string" "grafana_password" {
+  length  = 32
+  special = true
+}
 
-  set {
-    name  = "mariadbUser"
-    value = "foo"
-  }
+resource "helm_release" "prometheus_operator" {
+  name       = "prometheus-operator"
+  namespace  = "monitoring"
+  repository = data.helm_repository.default.metadata[0].name
+  chart      = "stable/prometheus-operator"
+  timeout    = 1000
 
-  set {
-    name  = "mariadbPassword"
-    value = "qux"
-  }
+  values = [<<EOT
+prometheus:
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          storageClassName: managed-premium
+          resources:
+            requests:
+              storage: 5Gi
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          storageClassName: managed-premium
+          resources:
+            requests:
+              storage: 5Gi
+
+grafana:
+  adminPassword: "${random_string.grafana_password.result}"
+  persistence:
+    enabled: true
+    storageClassName: managed-premium
+    accessModes: ["ReadWriteOnce"]
+    size: 5Gi
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'sample'
+        orgId: 1
+        folder: 'sample'
+        type: file
+        disableDeletion: true
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/sample
+  dashboards:
+    sample:
+      kubernetes-cluster:
+        gnetId: 6417
+        datasource: Prometheus
+
+prometheus-node-exporter:
+  service:
+    port: 30206
+    targetPort: 30206
+
+kubeEtcd:
+  enabled: false
+
+kubeControllerManager:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+EOT
+  ]
 }
