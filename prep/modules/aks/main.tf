@@ -1,5 +1,5 @@
 provider "azurerm" {
-  version = "~>1.43"
+  version = "~>1.44"
 }
 
 provider "azuread" {
@@ -103,7 +103,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 }
 
 provider "kubernetes" {
-  version = "~>1.10"
+  version = "~>1.11"
 
   load_config_file       = false
   host                   = azurerm_kubernetes_cluster.aks.kube_config.0.host
