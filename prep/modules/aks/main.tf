@@ -229,8 +229,8 @@ provider "helm" {
   }
 }
 
-data "helm_repository" "default" {
-  name = "default"
+data "helm_repository" "stable" {
+  name = "stable"
   url  = "https://kubernetes-charts.storage.googleapis.com/"
 }
 
@@ -242,7 +242,7 @@ resource "random_string" "grafana_password" {
 resource "helm_release" "prometheus_operator" {
   name       = "prometheus-operator"
   namespace  = "monitoring"
-  repository = data.helm_repository.default.metadata[0].name
+  repository = data.helm_repository.stable.metadata[0].name
   chart      = "stable/prometheus-operator"
   timeout    = 1000
 
