@@ -17,7 +17,3 @@ variable "la_workspace_name" {
 variable "la_workspace_rg" {
   default = "your-log-analytics-workspace-resource-group-name"
 }
-
-variable "tiller_image" {
-  default = "gcr.io/kubernetes-helm/tiller:v2.16.0"
-}

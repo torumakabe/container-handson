@@ -21,6 +21,4 @@ module "aks" {
   aks_subnet_id        = module.network.aks_subnet_id
   la_workspace_name    = var.la_workspace_name
   la_workspace_rg      = var.la_workspace_rg
-  tiller_image         = var.tiller_image
-
 }

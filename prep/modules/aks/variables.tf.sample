@@ -9,6 +9,3 @@ variable "aks_subnet_id" {}
 variable "la_workspace_name" {}
 
 variable "la_workspace_rg" {}
-
-variable "tiller_image" {}
-
