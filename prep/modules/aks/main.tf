@@ -256,7 +256,7 @@ resource "helm_release" "prometheus_operator" {
   namespace  = "monitoring"
   repository = data.helm_repository.stable.metadata[0].name
   chart      = "stable/prometheus-operator"
-  //  timeout    = 1000
+  timeout    = 1000
 
   values = [<<EOT
 prometheus:
