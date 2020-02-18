@@ -239,6 +239,18 @@ resource "random_string" "grafana_password" {
   special = true
 }
 
+resource "kubernetes_storage_class" "managed-premium-bind-wait" {
+  metadata {
+    name = "managed-premium-bind-wait"
+  }
+  storage_provisioner = "kubernetes.io/azure-disk"
+  volume_binding_mode = "WaitForFirstConsumer"
+  parameters = {
+    storageaccounttype = "Premium_LRS"
+    kind               = "Managed"
+  }
+}
+
 resource "helm_release" "prometheus_operator" {
   name       = "prometheus-operator"
   namespace  = "monitoring"
@@ -253,7 +265,7 @@ prometheus:
       volumeClaimTemplate:
         spec:
           accessModes: ["ReadWriteOnce"]
-          storageClassName: managed-premium
+          storageClassName: managed-premium-bind-wait
           resources:
             requests:
               storage: 5Gi
@@ -264,7 +276,7 @@ alertmanager:
       volumeClaimTemplate:
         spec:
           accessModes: ["ReadWriteOnce"]
-          storageClassName: managed-premium
+          storageClassName: managed-premium-bind-wait
           resources:
             requests:
               storage: 5Gi
@@ -273,7 +285,7 @@ grafana:
   adminPassword: "${random_string.grafana_password.result}"
   persistence:
     enabled: true
-    storageClassName: managed-premium
+    storageClassName: managed-premium-bind-wait
     accessModes: ["ReadWriteOnce"]
     size: 5Gi
   dashboardProviders:
