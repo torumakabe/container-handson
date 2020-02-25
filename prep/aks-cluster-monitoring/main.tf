@@ -478,7 +478,7 @@ resource "random_string" "grafana_password" {
 }
 
 resource "helm_release" "prometheus_operator" {
-  depends_on = ["null_resource.tiller_wait"]
+  depends_on = [null_resource.tiller_wait]
   name       = "prometheus-operator"
   namespace  = "monitoring"
   repository = data.helm_repository.default.metadata[0].name
