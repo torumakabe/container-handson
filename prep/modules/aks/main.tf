@@ -323,3 +323,32 @@ kubeScheduler:
 EOT
   ]
 }
+
+resource "helm_release" "kured" {
+  name       = "kured"
+  namespace  = "kube-system"
+  repository = data.helm_repository.stable.metadata[0].name
+  chart      = "stable/kured"
+  wait       = false
+
+  set {
+    name  = "image.tag"
+    value = "1.3.0"
+  }
+
+  set {
+    name  = "extraArgs.time-zone"
+    value = "Asia/Tokyo"
+  }
+
+  set {
+    name  = "extraArgs.start-time"
+    value = "09:00"
+  }
+
+  set {
+    name  = "extraArgs.end-time"
+    value = "17:00"
+  }
+}
+
