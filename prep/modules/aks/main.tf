@@ -270,9 +270,6 @@ resource "helm_release" "prometheus_operator" {
   wait       = false
 
   values = [<<EOT
-prometheusOperator:
-  createCustomResource: false
-
 prometheus:
   prometheusSpec:
     storageSpec:
