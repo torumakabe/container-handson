@@ -162,6 +162,16 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
       enabled = false
     }
   }
+
+  metric {
+    category = "AllMetrics"
+    enabled  = false
+
+    retention_policy {
+      days    = 0
+      enabled = false
+    }
+  }
 }
 
 resource "kubernetes_cluster_role_binding" "kubernetes-dashboard-rule" {
