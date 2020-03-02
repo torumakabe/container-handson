@@ -257,9 +257,12 @@ resource "helm_release" "prometheus_operator" {
   namespace  = "monitoring"
   repository = data.helm_repository.stable.metadata[0].name
   chart      = "stable/prometheus-operator"
-  wait       = false
+  //  wait       = false
 
   values = [<<EOT
+prometheusOperator:
+  createCustomResource: false
+
 prometheus:
   prometheusSpec:
     storageSpec:
@@ -329,7 +332,7 @@ resource "helm_release" "kured" {
   namespace  = "kube-system"
   repository = data.helm_repository.stable.metadata[0].name
   chart      = "stable/kured"
-  wait       = false
+  //  wait       = false
 
   set {
     name  = "image.tag"
