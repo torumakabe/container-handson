@@ -262,12 +262,12 @@ resource "kubernetes_storage_class" "managed-premium-bind-wait" {
   }
 }
 
+/*
 resource "helm_release" "prometheus_operator" {
   name       = "prometheus-operator"
   namespace  = "monitoring"
   repository = data.helm_repository.stable.metadata[0].name
   chart      = "stable/prometheus-operator"
-  wait       = false
 
   values = [<<EOT
 prometheus:
@@ -333,13 +333,13 @@ kubeScheduler:
 EOT
   ]
 }
+*/
 
 resource "helm_release" "kured" {
   name       = "kured"
   namespace  = "kube-system"
   repository = data.helm_repository.stable.metadata[0].name
   chart      = "stable/kured"
-  wait       = false
 
   set {
     name  = "image.tag"
