@@ -262,8 +262,74 @@ resource "kubernetes_storage_class" "managed-premium-bind-wait" {
   }
 }
 
-/*
+resource "kubernetes_daemonset" "image_puller" {
+  metadata {
+    name      = "image-puller"
+    namespace = kubernetes_namespace.monitoring.metadata[0].name
+  }
+
+  spec {
+    selector {
+      match_labels = {
+        name = "image-puller"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          name = "image-puller"
+        }
+      }
+
+      spec {
+        container {
+          image = "gcr.io/google_containers/pause"
+          name  = "pause"
+
+        }
+
+        init_container {
+          image   = "docker"
+          name    = "docker"
+          command = ["/bin/sh", "-c"]
+          args    = ["docker pull quay.io/prometheus/alertmanager:v0.20.0; docker pull squareup/ghostunnel:v1.5.2; docker pull jettech/kube-webhook-certgen:v1.0.0; docker pull quay.io/coreos/prometheus-operator:v0.36.0; docker pull quay.io/coreos/configmap-reload:v0.0.1; docker pull quay.io/coreos/prometheus-config-reloader:v0.36.0; docker pull k8s.gcr.io/hyperkube:v1.12.1; docker pull quay.io/prometheus/prometheus:v2.15.2;"]
+          volume_mount {
+            mount_path = "/var/run"
+            name       = "docker"
+          }
+
+        }
+
+        volume {
+          host_path {
+            path = "/var/run"
+          }
+          name = "docker"
+        }
+      }
+    }
+  }
+}
+
+resource "null_resource" "pulling_waiter" {
+  depends_on = [
+    kubernetes_daemonset.image_puller
+  ]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      sleep 120
+    
+    EOT
+
+  }
+}
+
 resource "helm_release" "prometheus_operator" {
+  depends_on = [
+    null_resource.pulling_waiter
+  ]
   name       = "prometheus-operator"
   namespace  = "monitoring"
   repository = data.helm_repository.stable.metadata[0].name
@@ -333,7 +399,6 @@ kubeScheduler:
 EOT
   ]
 }
-*/
 
 resource "helm_release" "kured" {
   name       = "kured"
