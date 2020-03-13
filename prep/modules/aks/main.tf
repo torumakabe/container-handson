@@ -21,6 +21,11 @@ data "azurerm_log_analytics_workspace" "aks" {
 resource "azuread_application" "aks" {
   name = "${var.aks_cluster_name}-aadapp"
   //  identifier_uris = ["https://${var.aks_cluster_name}-aadapp"]
+
+  // Waiting for AAD global replication
+  provisioner "local-exec" {
+    command = "sleep 60"
+  }
 }
 
 resource "azuread_service_principal" "aks" {
