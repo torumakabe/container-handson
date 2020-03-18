@@ -8,7 +8,7 @@ provider "azurerm" {
 }
 
 provider "azuread" {
-  version = "~>0.7"
+  version = "~>0.8"
 }
 
 provider "random" {
@@ -79,7 +79,7 @@ resource "azurerm_role_assignment" "aks" {
 resource "azurerm_kubernetes_cluster" "aks" {
   depends_on          = [azurerm_role_assignment.aks]
   name                = var.aks_cluster_name
-  kubernetes_version  = "1.16.4"
+  kubernetes_version  = "1.16.7"
   location            = azurerm_resource_group.aks.location
   resource_group_name = azurerm_resource_group.aks.name
   dns_prefix          = var.aks_cluster_name
