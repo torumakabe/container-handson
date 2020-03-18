@@ -324,7 +324,7 @@ resource "null_resource" "pulling_waiter" {
 
   provisioner "local-exec" {
     command = <<EOT
-      sleep 120
+      sleep 180
     
     EOT
 
