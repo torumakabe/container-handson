@@ -235,7 +235,7 @@ resource "kubernetes_namespace" "monitoring" {
 }
 
 provider "helm" {
-  version = "~>1.0"
+  version = "~>1.1"
 
   kubernetes {
     host                   = azurerm_kubernetes_cluster.aks.kube_config.0.host
