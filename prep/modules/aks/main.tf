@@ -18,45 +18,7 @@ data "azurerm_log_analytics_workspace" "aks" {
   resource_group_name = var.la_workspace_rg
 }
 
-resource "azuread_application" "aks" {
-  name = "${var.aks_cluster_name}-aadapp"
-  //  identifier_uris = ["https://${var.aks_cluster_name}-aadapp"]
-
-  // Waiting for AAD global replication
-  provisioner "local-exec" {
-    command = "sleep 60"
-  }
-}
-
-resource "azuread_service_principal" "aks" {
-  application_id = azuread_application.aks.application_id
-}
-
-resource "random_string" "password" {
-  length  = 32
-  special = true
-}
-
-resource "azuread_service_principal_password" "aks" {
-  end_date             = "2299-12-30T23:00:00Z" # Forever
-  service_principal_id = azuread_service_principal.aks.id
-  value                = random_string.password.result
-}
-
-resource "azurerm_role_assignment" "aks" {
-  depends_on           = [azuread_service_principal_password.aks]
-  scope                = data.azurerm_subscription.current.id
-  role_definition_name = "Contributor"
-  principal_id         = azuread_service_principal.aks.id
-
-  // Waiting for AAD global replication
-  provisioner "local-exec" {
-    command = "sleep 60"
-  }
-}
-
 resource "azurerm_kubernetes_cluster" "aks" {
-  depends_on          = [azurerm_role_assignment.aks]
   name                = var.aks_cluster_name
   kubernetes_version  = "1.16.7"
   location            = var.aks_cluster_location
@@ -73,12 +35,15 @@ resource "azurerm_kubernetes_cluster" "aks" {
     min_count           = 3
     max_count           = 3
     vm_size             = "Standard_D2s_v3"
-    /*    os_type             = "Linux" */
   }
 
   service_principal {
-    client_id     = azuread_application.aks.application_id
-    client_secret = random_string.password.result
+    client_id     = "msi"
+    client_secret = "dummy"
+  }
+
+  identity {
+    type = "SystemAssigned"
   }
 
   role_based_access_control {
@@ -338,7 +303,7 @@ resource "helm_release" "prometheus_operator" {
   name       = "prometheus-operator"
   namespace  = "monitoring"
   repository = data.helm_repository.stable.metadata[0].name
-  chart      = "stable/prometheus-operator"
+  chart      = "prometheus-operator"
 
   values = [<<EOT
 prometheus:
@@ -409,7 +374,7 @@ resource "helm_release" "kured" {
   name       = "kured"
   namespace  = "kube-system"
   repository = data.helm_repository.stable.metadata[0].name
-  chart      = "stable/kured"
+  chart      = "kured"
 
   set {
     name  = "image.tag"
