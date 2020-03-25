@@ -66,6 +66,11 @@ resource "azurerm_kubernetes_cluster" "aks" {
     }
   }
 
+  // Workaround https://github.com/terraform-providers/terraform-provider-azurerm/issues/6215
+  lifecycle {
+    ignore_changes = [windows_profile]
+  }
+
   provisioner "local-exec" {
     command = <<EOT
       az aks get-credentials -g ${var.aks_cluster_rg} -n ${self.name} --admin --overwrite-existing;
