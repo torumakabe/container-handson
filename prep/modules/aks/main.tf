@@ -20,7 +20,7 @@ data "azurerm_log_analytics_workspace" "aks" {
 
 resource "azurerm_kubernetes_cluster" "aks" {
   name                = var.aks_cluster_name
-  kubernetes_version  = "1.16.7"
+  kubernetes_version  = "1.17.3"
   location            = var.aks_cluster_location
   resource_group_name = var.aks_cluster_rg
   dns_prefix          = var.aks_cluster_name
