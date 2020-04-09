@@ -1,5 +1,5 @@
 provider "azurerm" {
-  version = "~>2.4"
+  version = "~>2.5"
   features {}
 }
 
@@ -37,11 +37,6 @@ resource "azurerm_kubernetes_cluster" "aks" {
     vm_size             = "Standard_D2s_v3"
   }
 
-  service_principal {
-    client_id     = "msi"
-    client_secret = "dummy"
-  }
-
   identity {
     type = "SystemAssigned"
   }
@@ -64,11 +59,6 @@ resource "azurerm_kubernetes_cluster" "aks" {
       enabled                    = true
       log_analytics_workspace_id = data.azurerm_log_analytics_workspace.aks.id
     }
-  }
-
-  // Workaround https://github.com/terraform-providers/terraform-provider-azurerm/issues/6215
-  lifecycle {
-    ignore_changes = [windows_profile]
   }
 
   provisioner "local-exec" {
