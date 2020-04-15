@@ -1,1 +1,1 @@
-# Container hands-on on Azure
+# Container hands-on on Azure (deprecated)
